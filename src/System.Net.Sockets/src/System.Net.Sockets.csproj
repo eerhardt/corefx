@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="12.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
     <Configuration Condition="'$(Configuration)'==''">Windows_Debug</Configuration>
@@ -9,7 +9,7 @@
     <AssemblyVersion>4.1.0.0</AssemblyVersion>
     <ProjectGuid>{43311AFB-D7C4-4E5A-B1DE-855407F90D1B}</ProjectGuid>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-    <PackageTargetFramework Condition="'$(TargetGroup)' == ''">dotnet5.4</PackageTargetFramework>
+    <PackageTargetFramework Condition="'$(TargetGroup)' == ''">netstandard1.3</PackageTargetFramework>
     <EnableWinRT Condition="'$(TargetGroup)' == 'netcore50'">true</EnableWinRT>
     <IsPartialFacadeAssembly Condition="'$(TargetGroup)' == 'net46'">true</IsPartialFacadeAssembly>
     <PackageTargetFramework Condition="'$(TargetsWindows)' == 'true' AND '$(EnableWinRT)' == 'true'">netcore50</PackageTargetFramework>
@@ -17,6 +17,11 @@
     <PackageTargetRuntime Condition=" '$(TargetsUnix)' == 'true'">unix</PackageTargetRuntime>
   </PropertyGroup>
 
+  <PropertyGroup Condition=" '$(TargetsWindows)' == 'true' AND '$(TargetGroup)' == ''">
+    <ProjectJson>win/project.json</ProjectJson>
+    <ProjectLockJson>win/project.lock.json</ProjectLockJson>
+  </PropertyGroup>
+  
   <PropertyGroup Condition="'$(EnableWinRT)' != 'true'">
     <DefineConstants>$(DefineConstants);FEATURE_CORECLR</DefineConstants>
   </PropertyGroup>
@@ -198,7 +203,7 @@
     <Compile Include="System\Net\Sockets\Socket.Windows.cs" />
     <Compile Include="System\Net\Sockets\SocketAsyncEventArgs.Windows.cs" />
     <Compile Include="System\Net\Sockets\SocketPal.Windows.cs" />
-
+    <Compile Include="System\Net\Sockets\TCPClient.Windows.cs" />
     <Compile Include="$(CommonPath)\System\Net\SafeCloseSocket.Windows.cs">
       <Link>Common\System\Net\SafeCloseSocket.Windows.cs</Link>
     </Compile>    
@@ -323,10 +328,16 @@
     <Compile Include="$(CommonPath)\Interop\Windows\mincore_obsolete\Interop.LocalFree.cs" >
       <Link>Common\Interop\Windows\mincore_obsolete\Interop.LocalFree.cs</Link>
     </Compile>
+    <Compile Include="$(CommonPath)\System\Net\ContextAwareResult.Windows.cs">
+      <Link>Common\System\Net\ContextAwareResult.Windows.cs</Link>
+    </Compile>
   </ItemGroup>
   
   <!-- Windows : Win32 + WinRT -->
   <ItemGroup Condition="'$(TargetsWindows)' == 'true' AND '$(EnableWinRT)' == 'true'">
+    <Compile Include="$(CommonPath)\System\Net\ContextAwareResult.netcore50.cs">
+      <Link>Common\System\Net\ContextAwareResult.netcore50.cs</Link>
+    </Compile>
   </ItemGroup>
   
   <ItemGroup Condition=" '$(TargetsUnix)' == 'true' ">
@@ -341,7 +352,10 @@
     <Compile Include="System\Net\Sockets\SocketAsyncEngine.Unix.cs" />
     <Compile Include="System\Net\Sockets\SocketAsyncEventArgs.Unix.cs" />
     <Compile Include="System\Net\Sockets\SocketPal.Unix.cs" />
-
+    <Compile Include="System\Net\Sockets\TCPClient.Unix.cs" />
+    <Compile Include="$(CommonPath)\System\Net\ContextAwareResult.Unix.cs">
+      <Link>Common\System\Net\ContextAwareResult.Unix.cs</Link>
+    </Compile>
     <Compile Include="$(CommonPath)\System\Net\InteropIPAddressExtensions.Unix.cs">
       <Link>Common\System\Net\InteropIPAddressExtensions.Unix.cs</Link>
     </Compile>
@@ -353,6 +367,9 @@
     </Compile>
     <Compile Include="$(CommonPath)\System\Net\SocketProtocolSupportPal.Unix.cs">
       <Link>Common\System\Net\SocketProtocolSupportPal.Unix</Link>
+    </Compile>
+    <Compile Include="$(CommonPath)\System\Net\Sockets\SocketErrorPal.Unix.cs">
+      <Link>Common\System\Net\Sockets\SocketErrorPal.Unix</Link>
     </Compile>
 
     <Compile Include="$(CommonPath)\Interop\Interop.CheckedAccess.cs" >
@@ -380,9 +397,6 @@
     <Compile Include="$(CommonPath)\Interop\Unix\System.Native\Interop.Fcntl.cs">
       <Link>Interop\Unix\System.Native\Interop.Fcntl.cs</Link>
     </Compile>
-    <Compile Include="$(CommonPath)\Interop\Unix\System.Native\Interop.FdSet.cs">
-      <Link>Interop\Unix\System.Native\Interop.FdSet.cs</Link>
-    </Compile>
     <Compile Include="$(CommonPath)\Interop\Unix\System.Native\Interop.GetBytesAvailable.cs">
       <Link>Interop\Unix\System.Native\Interop.GetBytesAvailable.cs</Link>
     </Compile>
@@ -407,6 +421,12 @@
     <Compile Include="$(CommonPath)\Interop\Unix\System.Native\Interop.LingerOption.cs">
       <Link>Interop\Unix\System.Native\Interop.LingerOption.cs</Link>
     </Compile>
+    <Compile Include="$(CommonPath)\Interop\Unix\System.Native\Interop.SetSendTimeout.cs">
+      <Link>Interop\Unix\System.Native\Interop.SetSendTimeout.cs</Link>
+    </Compile>
+    <Compile Include="$(CommonPath)\Interop\Unix\System.Native\Interop.SetReceiveTimeout.cs">
+      <Link>Interop\Unix\System.Native\Interop.SetReceiveTimeout.cs</Link>
+    </Compile>
     <Compile Include="$(CommonPath)\Interop\Unix\System.Native\Interop.Listen.cs">
       <Link>Interop\Unix\System.Native\Interop.Listen.cs</Link>
     </Compile>
@@ -419,6 +439,9 @@
     <Compile Include="$(CommonPath)\Interop\Unix\System.Native\Interop.MulticastOption.cs">
       <Link>Interop\Unix\System.Native\Interop.MulticastOption.cs</Link>
     </Compile>
+    <Compile Include="$(CommonPath)\Interop\Unix\System.Native\Interop.Poll.cs">
+      <Link>Interop\Unix\System.Native\Interop.Poll.cs</Link>
+    </Compile>
     <Compile Include="$(CommonPath)\Interop\Unix\System.Native\Interop.PlatformSocketSupport.cs">
       <Link>Interop\Unix\System.Native\Interop.PlatformSocketSupport.cs</Link>
     </Compile>
@@ -427,9 +450,6 @@
     </Compile>
     <Compile Include="$(CommonPath)\Interop\Unix\System.Native\Interop.SendMessage.cs">
       <Link>Interop\Unix\System.Native\Interop.SendMessage.cs</Link>
-    </Compile>
-    <Compile Include="$(CommonPath)\Interop\Unix\System.Native\Interop.Select.cs">
-      <Link>Interop\Unix\System.Native\Interop.Select.cs</Link>
     </Compile>
     <Compile Include="$(CommonPath)\Interop\Unix\System.Native\Interop.SetSockOpt.cs">
       <Link>Interop\Unix\System.Native\Interop.SetSockOpt.cs</Link>
@@ -445,6 +465,12 @@
     </Compile>
     <Compile Include="$(CommonPath)\Interop\Unix\System.Native\Interop.SocketAddress.cs">
       <Link>Interop\Unix\System.Native\Interop.SocketAddress.cs</Link>
+    </Compile>
+    <Compile Include="$(CommonPath)\Interop\Unix\System.Native\Interop.Pipe.cs">
+      <Link>Interop\Unix\System.Native\Interop.Pipe.cs</Link>
+    </Compile>
+    <Compile Include="$(CommonPath)\Interop\Unix\System.Native\Interop.Write.cs">
+      <Link>Interop\Unix\System.Native\Interop.Write.cs</Link>
     </Compile>
   </ItemGroup>
 

@@ -1,5 +1,6 @@
-// Copyright (c) Microsoft. All rights reserved.
-// Licensed under the MIT license. See LICENSE file in the project root for full license information.
+// Licensed to the .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
+// See the LICENSE file in the project root for more information.
 
 
 
@@ -829,6 +830,9 @@ namespace System.Data.SqlClient
                 try
                 { // InternalExecuteNonQuery already has reliability block, but if failure will not put stateObj back into pool.
                     Task execNQ = InternalExecuteNonQuery(completion, ADP.BeginExecuteNonQuery, false, timeout, asyncWrite);
+
+                    // must finish caching information before ReadSni which can activate the callback before returning
+                    cachedAsyncState.SetActiveConnectionAndResult(completion, ADP.EndExecuteNonQuery, _activeConnection);
                     if (execNQ != null)
                     {
                         AsyncHelper.ContinueTask(execNQ, completion, () => BeginExecuteNonQueryInternalReadStage(completion));
@@ -870,8 +874,6 @@ namespace System.Data.SqlClient
             // Read SNI does not have catches for async exceptions, handle here.
             try
             {
-                // must finish caching information before ReadSni which can activate the callback before returning
-                cachedAsyncState.SetActiveConnectionAndResult(completion, ADP.EndExecuteNonQuery, _activeConnection);
                 _stateObj.ReadSni(completion);
             }
             catch (Exception)
@@ -1165,6 +1167,8 @@ namespace System.Data.SqlClient
                     throw;
                 }
 
+                // must finish caching information before ReadSni which can activate the callback before returning
+                cachedAsyncState.SetActiveConnectionAndResult(completion, ADP.EndExecuteXmlReader, _activeConnection);
                 if (writeTask != null)
                 {
                     AsyncHelper.ContinueTask(writeTask, completion, () => BeginExecuteXmlReaderInternalReadStage(completion));
@@ -1193,8 +1197,6 @@ namespace System.Data.SqlClient
             // Read SNI does not have catches for async exceptions, handle here.
             try
             {
-                // must finish caching information before ReadSni which can activate the callback before returning
-                cachedAsyncState.SetActiveConnectionAndResult(completion, ADP.EndExecuteXmlReader, _activeConnection);
                 _stateObj.ReadSni(completion);
             }
             catch (Exception e)
@@ -1414,6 +1416,8 @@ namespace System.Data.SqlClient
                     throw;
                 }
 
+                // must finish caching information before ReadSni which can activate the callback before returning
+                cachedAsyncState.SetActiveConnectionAndResult(completion, ADP.EndExecuteReader, _activeConnection);
                 if (writeTask != null)
                 {
                     AsyncHelper.ContinueTask(writeTask, completion, () => BeginExecuteReaderInternalReadStage(completion));
@@ -1442,8 +1446,6 @@ namespace System.Data.SqlClient
             // Read SNI does not have catches for async exceptions, handle here.
             try
             {
-                // must finish caching information before ReadSni which can activate the callback before returning
-                cachedAsyncState.SetActiveConnectionAndResult(completion, ADP.EndExecuteReader, _activeConnection);
                 _stateObj.ReadSni(completion);
             }
             catch (Exception e)

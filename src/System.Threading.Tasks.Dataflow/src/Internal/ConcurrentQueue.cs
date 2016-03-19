@@ -1,5 +1,6 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
-// Licensed under the MIT license. See LICENSE file in the project root for full license information.
+// Licensed to the .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
+// See the LICENSE file in the project root for more information.
 #pragma warning disable 0420
 
 
@@ -93,7 +94,7 @@ namespace System.Threading.Tasks.Dataflow.Internal.Collections
         {
             if (collection == null)
             {
-                throw new ArgumentNullException("collection");
+                throw new ArgumentNullException(nameof(collection));
             }
 
             InitializeFromCollection(collection);
@@ -150,7 +151,7 @@ namespace System.Threading.Tasks.Dataflow.Internal.Collections
             // Validate arguments.
             if (array == null)
             {
-                throw new ArgumentNullException("array");
+                throw new ArgumentNullException(nameof(array));
             }
 
             // We must be careful not to corrupt the array, so we will first accumulate an
@@ -431,7 +432,7 @@ namespace System.Threading.Tasks.Dataflow.Internal.Collections
         {
             if (array == null)
             {
-                throw new ArgumentNullException("array");
+                throw new ArgumentNullException(nameof(array));
             }
 
             // We must be careful not to corrupt the array, so we will first accumulate an

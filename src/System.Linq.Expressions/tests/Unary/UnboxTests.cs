@@ -1,5 +1,6 @@
-﻿// Copyright (c) Jon Hanna. All rights reserved.
-// Licensed under the MIT license. See LICENSE file in the project root for full license information.
+// Licensed to the .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
+// See the LICENSE file in the project root for more information.
 
 using System;
 using System.Collections.Generic;
@@ -10,12 +11,12 @@ namespace System.Linq.Expressions.Tests
     public class UnboxTests
     {
         [Theory]
-        [MemberData("UnboxableFromObject")]
-        [MemberData("NullableUnboxableFromObject")]
-        [MemberData("UnboxableFromIComparable")]
-        [MemberData("NullableUnboxableFromIComparable")]
-        [MemberData("UnboxableFromIComparableT")]
-        [MemberData("NullableUnboxableFromIComparableT")]
+        [MemberData(nameof(UnboxableFromObject))]
+        [MemberData(nameof(NullableUnboxableFromObject))]
+        [MemberData(nameof(UnboxableFromIComparable))]
+        [MemberData(nameof(NullableUnboxableFromIComparable))]
+        [MemberData(nameof(UnboxableFromIComparableT))]
+        [MemberData(nameof(NullableUnboxableFromIComparableT))]
         public void CanUnbox(object value, Type type, Type boxedType)
         {
             Expression expression = Expression.Constant(value, boxedType);
@@ -26,12 +27,12 @@ namespace System.Linq.Expressions.Tests
         }
 
         [Theory]
-        [MemberData("UnboxableFromObject")]
-        [MemberData("NullableUnboxableFromObject")]
-        [MemberData("UnboxableFromIComparable")]
-        [MemberData("NullableUnboxableFromIComparable")]
-        [MemberData("UnboxableFromIComparableT")]
-        [MemberData("NullableUnboxableFromIComparableT")]
+        [MemberData(nameof(UnboxableFromObject))]
+        [MemberData(nameof(NullableUnboxableFromObject))]
+        [MemberData(nameof(UnboxableFromIComparable))]
+        [MemberData(nameof(NullableUnboxableFromIComparable))]
+        [MemberData(nameof(UnboxableFromIComparableT))]
+        [MemberData(nameof(NullableUnboxableFromIComparableT))]
         public void CanUnboxFromMake(object value, Type type, Type boxedType)
         {
             Expression expression = Expression.Constant(value, boxedType);
@@ -116,7 +117,7 @@ namespace System.Linq.Expressions.Tests
         }
 
         [Theory]
-        [MemberData("NullableTypes")]
+        [MemberData(nameof(NullableTypes))]
         public void NullNullable(Type type)
         {
             UnaryExpression unbox = Expression.Unbox(Expression.Default(typeof(object)), type);

@@ -1,5 +1,6 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
-// Licensed under the MIT license. See LICENSE file in the project root for full license information.
+// Licensed to the .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
+// See the LICENSE file in the project root for more information.
 
 using System.Net.Test.Common;
 using System.Threading;
@@ -14,6 +15,7 @@ namespace System.Net.Sockets.Tests
         private const int UnusedPort = 8;
 
         [Fact]
+        [PlatformSpecific(PlatformID.Windows)]
         public void Socket_ConnectDnsEndPoint_Success()
         {
             int port;
@@ -27,6 +29,7 @@ namespace System.Net.Sockets.Tests
         }
 
         [Fact]
+        [PlatformSpecific(PlatformID.Windows)]
         public void Socket_ConnectDnsEndPoint_Failure()
         {
             using (Socket sock = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp))
@@ -79,6 +82,7 @@ namespace System.Net.Sockets.Tests
         }
 
         [Fact]
+        [PlatformSpecific(PlatformID.Windows)]
         public void Socket_BeginConnectDnsEndPoint_Success()
         {
             int port;
@@ -93,6 +97,7 @@ namespace System.Net.Sockets.Tests
         }
 
         [Fact]
+        [PlatformSpecific(PlatformID.Windows)]
         public void Socket_BeginConnectDnsEndPoint_Failure()
         {
             using (Socket sock = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp))
@@ -138,6 +143,7 @@ namespace System.Net.Sockets.Tests
         }
 
         [Fact]
+        [PlatformSpecific(PlatformID.Windows)]
         public void Socket_ConnectAsyncDnsEndPoint_Success()
         {
             int port;
@@ -167,6 +173,7 @@ namespace System.Net.Sockets.Tests
         }
 
         [Fact]
+        [PlatformSpecific(PlatformID.Windows)]
         public void Socket_ConnectAsyncDnsEndPoint_HostNotFound()
         {
             SocketAsyncEventArgs args = new SocketAsyncEventArgs();
@@ -191,6 +198,7 @@ namespace System.Net.Sockets.Tests
         }
 
         [Fact]
+        [PlatformSpecific(PlatformID.Windows)]
         public void Socket_ConnectAsyncDnsEndPoint_ConnectionRefused()
         {
             SocketAsyncEventArgs args = new SocketAsyncEventArgs();
@@ -217,7 +225,6 @@ namespace System.Net.Sockets.Tests
         }
 
         [Fact]
-        [ActiveIssue(4002, PlatformID.AnyUnix)]
         public void Socket_StaticConnectAsync_Success()
         {
             Assert.True(Capability.IPv6Support() && Capability.IPv4Support());
@@ -227,7 +234,7 @@ namespace System.Net.Sockets.Tests
             SocketTestServer server6 = SocketTestServer.SocketTestServerFactory(IPAddress.IPv6Loopback, out port6);
 
             SocketAsyncEventArgs args = new SocketAsyncEventArgs();
-            args.RemoteEndPoint = new DnsEndPoint("localhost", port4);
+            args.RemoteEndPoint = new DnsEndPoint("127.0.0.1", port4);
             args.Completed += OnConnectAsyncCompleted;
 
             ManualResetEvent complete = new ManualResetEvent(false);
@@ -245,7 +252,7 @@ namespace System.Net.Sockets.Tests
 
             args.ConnectSocket.Dispose();
 
-            args.RemoteEndPoint = new DnsEndPoint("localhost", port6);
+            args.RemoteEndPoint = new DnsEndPoint("::1", port6);
             complete.Reset();
 
             Assert.True(Socket.ConnectAsync(SocketType.Stream, ProtocolType.Tcp, args));

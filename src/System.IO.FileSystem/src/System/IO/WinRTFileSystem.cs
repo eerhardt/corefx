@@ -1,5 +1,6 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
-// Licensed under the MIT license. See LICENSE file in the project root for full license information.
+// Licensed to the .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
+// See the LICENSE file in the project root for more information.
 
 using System;
 using System.Collections.Generic;
@@ -562,7 +563,7 @@ namespace System.IO
                 throw Win32Marshal.GetExceptionForWin32Error(Interop.mincore.Errors.ERROR_DIR_NOT_EMPTY, fullPath);
 
             // StorageFolder.Delete ignores readonly attribute.  Detect and throw.
-            if ((folder.Attributes & Windows.Storage.FileAttributes.ReadOnly) == Windows.Storage.FileAttributes.ReadOnly)
+            if ((folder.Attributes & WinRTFileAttributes.ReadOnly) == WinRTFileAttributes.ReadOnly)
                 throw new IOException(SR.Format(SR.UnauthorizedAccess_IODenied_Path, fullPath));
 
             StorageFolder parentFolder = await folder.GetParentAsync().TranslateWinRTTask(fullPath, isDirectory: true);

@@ -1,5 +1,6 @@
-// Copyright (c) Microsoft. All rights reserved.
-// Licensed under the MIT license. See LICENSE file in the project root for full license information.
+// Licensed to the .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
+// See the LICENSE file in the project root for more information.
 
 using System;
 using System.Globalization;
@@ -78,34 +79,6 @@ namespace System.Globalization.CalendarTests
             expectedDays = (IsLeapYear(year)) ? c_DAYS_IN_LEAP_YEAR : c_DAYS_IN_COMMON_YEAR;
             actualDays = myCalendar.GetDaysInYear(year);
             Assert.Equal(expectedDays, actualDays);
-        }
-        #endregion
-
-        #region Negtive Tests
-        // NegTest1: year is greater than maximum supported value
-        [Fact]
-        public void NegTest1()
-        {
-            System.Globalization.Calendar myCalendar = new GregorianCalendar(GregorianCalendarTypes.USEnglish);
-            int year;
-            year = myCalendar.MaxSupportedDateTime.Year + 100;
-            Assert.Throws<ArgumentOutOfRangeException>(() =>
-           {
-               myCalendar.GetDaysInYear(year);
-           });
-        }
-
-        // NegTest2: year is less than maximum supported value
-        [Fact]
-        public void NegTest2()
-        {
-            System.Globalization.Calendar myCalendar = new GregorianCalendar(GregorianCalendarTypes.USEnglish);
-            int year;
-            year = myCalendar.MinSupportedDateTime.Year - 100;
-            Assert.Throws<ArgumentOutOfRangeException>(() =>
-           {
-               myCalendar.GetDaysInYear(year);
-           });
         }
         #endregion
 

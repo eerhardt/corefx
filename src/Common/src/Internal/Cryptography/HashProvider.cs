@@ -1,5 +1,6 @@
-// Copyright (c) Microsoft. All rights reserved.
-// Licensed under the MIT license. See LICENSE file in the project root for full license information.
+// Licensed to the .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
+// See the LICENSE file in the project root for more information.
 
 using System;
 using System.Diagnostics;
@@ -20,11 +21,11 @@ namespace Internal.Cryptography
             // an invalid number of bytes read.  Since our implementations of AppendHashDataCore
             // end up using unsafe code, we want to be sure the arguments are valid.
             if (data == null)
-                throw new ArgumentNullException("data", SR.ArgumentNull_Buffer);
+                throw new ArgumentNullException(nameof(data), SR.ArgumentNull_Buffer);
             if (offset < 0)
-                throw new ArgumentOutOfRangeException("offset", SR.ArgumentOutOfRange_NeedNonNegNum);
+                throw new ArgumentOutOfRangeException(nameof(offset), SR.ArgumentOutOfRange_NeedNonNegNum);
             if (count < 0)
-                throw new ArgumentOutOfRangeException("count", SR.ArgumentOutOfRange_NeedNonNegNum);
+                throw new ArgumentOutOfRangeException(nameof(count), SR.ArgumentOutOfRange_NeedNonNegNum);
             if (data.Length - offset < count)
                 throw new ArgumentException(SR.Argument_InvalidOffLen);
 

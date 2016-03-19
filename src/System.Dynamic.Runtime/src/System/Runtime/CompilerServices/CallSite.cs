@@ -1,5 +1,6 @@
-// Copyright (c) Microsoft. All rights reserved.
-// Licensed under the MIT license. See LICENSE file in the project root for full license information.
+// Licensed to the .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
+// See the LICENSE file in the project root for more information.
 
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -80,8 +81,8 @@ namespace System.Runtime.CompilerServices
         /// <returns>The new CallSite.</returns>
         public static CallSite Create(Type delegateType, CallSiteBinder binder)
         {
-            ContractUtils.RequiresNotNull(delegateType, "delegateType");
-            ContractUtils.RequiresNotNull(binder, "binder");
+            ContractUtils.RequiresNotNull(delegateType, nameof(delegateType));
+            ContractUtils.RequiresNotNull(binder, nameof(binder));
             if (!delegateType.IsSubclassOf(typeof(MulticastDelegate))) throw Error.TypeMustBeDerivedFromSystemDelegate();
 
             var ctors = s_siteCtors;
@@ -339,7 +340,7 @@ namespace System.Runtime.CompilerServices
         private static bool IsSimpleSignature(MethodInfo invoke, out Type[] sig)
         {
             ParameterInfo[] pis = invoke.GetParametersCached();
-            ContractUtils.Requires(pis.Length > 0 && pis[0].ParameterType == typeof(CallSite), "T");
+            ContractUtils.Requires(pis.Length > 0 && pis[0].ParameterType == typeof(CallSite), nameof(T));
 
             Type[] args = new Type[invoke.ReturnType != typeof(void) ? pis.Length : pis.Length - 1];
             bool supported = true;

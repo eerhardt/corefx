@@ -1,5 +1,6 @@
-﻿// Copyright (c) Jon Hanna. All rights reserved.
-// Licensed under the MIT license. See LICENSE file in the project root for full license information.
+// Licensed to the .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
+// See the LICENSE file in the project root for more information.
 
 using System;
 using Xunit;
@@ -9,7 +10,7 @@ namespace System.Linq.Expressions.Tests
     public class ReferenceNotEqual : ReferenceEqualityTests
     {
         [Theory]
-        [MemberData("ReferenceObjectsData")]
+        [MemberData(nameof(ReferenceObjectsData))]
         public void FalseOnSame(object item)
         {
             Expression exp = Expression.ReferenceNotEqual(
@@ -20,7 +21,7 @@ namespace System.Linq.Expressions.Tests
         }
 
         [Theory]
-        [MemberData("ReferenceTypesData")]
+        [MemberData(nameof(ReferenceTypesData))]
         public void FalseOnBothNull(Type type)
         {
             Expression exp = Expression.ReferenceNotEqual(
@@ -31,7 +32,7 @@ namespace System.Linq.Expressions.Tests
         }
 
         [Theory]
-        [MemberData("ReferenceObjectsData")]
+        [MemberData(nameof(ReferenceObjectsData))]
         public void TrueIfLeftNull(object item)
         {
             Expression exp = Expression.ReferenceNotEqual(
@@ -42,7 +43,7 @@ namespace System.Linq.Expressions.Tests
         }
 
         [Theory]
-        [MemberData("ReferenceObjectsData")]
+        [MemberData(nameof(ReferenceObjectsData))]
         public void TrueIfRightNull(object item)
         {
             Expression exp = Expression.ReferenceNotEqual(
@@ -53,7 +54,7 @@ namespace System.Linq.Expressions.Tests
         }
 
         [Theory]
-        [MemberData("DifferentObjects")]
+        [MemberData(nameof(DifferentObjects))]
         public void TrueIfDifferentObjectsAsObject(object x, object y)
         {
             Expression exp = Expression.ReferenceNotEqual(
@@ -64,7 +65,7 @@ namespace System.Linq.Expressions.Tests
         }
 
         [Theory]
-        [MemberData("DifferentObjects")]
+        [MemberData(nameof(DifferentObjects))]
         public void TrueIfDifferentObjectsOwnType(object x, object y)
         {
             Expression exp = Expression.ReferenceNotEqual(
@@ -75,9 +76,9 @@ namespace System.Linq.Expressions.Tests
         }
 
         [Theory]
-        [MemberData("LeftValueType")]
-        [MemberData("RightValueType")]
-        [MemberData("BothValueType")]
+        [MemberData(nameof(LeftValueType))]
+        [MemberData(nameof(RightValueType))]
+        [MemberData(nameof(BothValueType))]
         public void ThrowsOnValueTypeArguments(object x, object y)
         {
             Expression xExp = Expression.Constant(x);
@@ -86,7 +87,7 @@ namespace System.Linq.Expressions.Tests
         }
 
         [Theory]
-        [MemberData("UnassignablePairs")]
+        [MemberData(nameof(UnassignablePairs))]
         public void ThrowsOnUnassignablePairs(object x, object y)
         {
             Expression xExp = Expression.Constant(x);
@@ -95,7 +96,7 @@ namespace System.Linq.Expressions.Tests
         }
 
         [Theory]
-        [MemberData("ComparableValuesData")]
+        [MemberData(nameof(ComparableValuesData))]
         public void FalseOnSameViaInterface(object item)
         {
             Expression exp = Expression.ReferenceNotEqual(
@@ -106,7 +107,7 @@ namespace System.Linq.Expressions.Tests
         }
 
         [Theory]
-        [MemberData("DifferentComparableValues")]
+        [MemberData(nameof(DifferentComparableValues))]
         public void TrueOnDifferentViaInterface(object x, object y)
         {
             Expression exp = Expression.ReferenceNotEqual(
@@ -117,7 +118,7 @@ namespace System.Linq.Expressions.Tests
         }
 
         [Theory]
-        [MemberData("ComparableReferenceTypesData")]
+        [MemberData(nameof(ComparableReferenceTypesData))]
         public void FalseOnSameLeftViaInterface(object item)
         {
             Expression exp = Expression.ReferenceNotEqual(
@@ -128,7 +129,7 @@ namespace System.Linq.Expressions.Tests
         }
 
         [Theory]
-        [MemberData("ComparableReferenceTypesData")]
+        [MemberData(nameof(ComparableReferenceTypesData))]
         public void FalseOnSameRightViaInterface(object item)
         {
             Expression exp = Expression.ReferenceNotEqual(

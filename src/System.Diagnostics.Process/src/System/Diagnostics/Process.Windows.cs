@@ -1,5 +1,6 @@
-// Copyright (c) Microsoft. All rights reserved.
-// Licensed under the MIT license. See LICENSE file in the project root for full license information.
+// Licensed to the .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
+// See the LICENSE file in the project root for more information.
 
 using Microsoft.Win32.SafeHandles;
 using System.Collections.Generic;
@@ -665,6 +666,12 @@ namespace System.Diagnostics
             return ret;
         }
 
+        private static Encoding GetEncoding(int codePage)
+        {
+            Encoding enc = EncodingHelper.GetSupportedConsoleEncoding(codePage);
+            return new ConsoleEncoding(enc); // ensure encoding doesn't output a preamble
+        }
+
         // -----------------------------
         // ---- PAL layer ends here ----
         // -----------------------------
@@ -858,7 +865,7 @@ namespace System.Diagnostics
         private void CreatePipe(out SafeFileHandle parentHandle, out SafeFileHandle childHandle, bool parentInputs)
         {
             Interop.mincore.SECURITY_ATTRIBUTES securityAttributesParent = new Interop.mincore.SECURITY_ATTRIBUTES();
-            securityAttributesParent.bInheritHandle = true;
+            securityAttributesParent.bInheritHandle = Interop.BOOL.TRUE;
 
             SafeFileHandle hTmp = null;
             try

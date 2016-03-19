@@ -1,5 +1,6 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
-// Licensed under the MIT license. See LICENSE file in the project root for full license information.
+// Licensed to the .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
+// See the LICENSE file in the project root for more information.
 
 using Xunit;
 
@@ -142,7 +143,7 @@ namespace System.Net.WebHeaderCollectionTests
             new object[] { "\u0019" }
         };
 
-        [Theory, MemberData("InvalidNames")]
+        [Theory, MemberData(nameof(InvalidNames))]
         public void CheckBadChars_InvalidName(string name)
         {
             WebHeaderCollection w = new WebHeaderCollection();
@@ -157,7 +158,7 @@ namespace System.Net.WebHeaderCollectionTests
             new object[] { "value1\u0019value2" }
         };
 
-        [Theory, MemberData("InvalidValues")]
+        [Theory, MemberData(nameof(InvalidValues))]
         public void CheckBadChars_InvalidValue(string value)
         {
             WebHeaderCollection w = new WebHeaderCollection();
@@ -171,7 +172,7 @@ namespace System.Net.WebHeaderCollectionTests
             new object[] { "value1\r\n value2" }
         };
 
-        [Theory, MemberData("ValidValues")]
+        [Theory, MemberData(nameof(ValidValues))]
         public void CheckBadChars_ValidValue(string value)
         {
             WebHeaderCollection w = new WebHeaderCollection();
@@ -223,7 +224,7 @@ namespace System.Net.WebHeaderCollectionTests
         };
 
         [Theory]
-        [MemberData("TestHeadersWithValues")]
+        [MemberData(nameof(TestHeadersWithValues))]
         public void GetValues_String_Success(string header, string value, string[] expectedValues)
         {
             WebHeaderCollection w = new WebHeaderCollection();

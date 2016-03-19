@@ -1,5 +1,6 @@
-// Copyright (c) Microsoft. All rights reserved.
-// Licensed under the MIT license. See LICENSE file in the project root for full license information.
+// Licensed to the .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
+// See the LICENSE file in the project root for more information.
 
 using System.Globalization;
 using System.Net.Internals;
@@ -35,7 +36,7 @@ namespace System.Net
             if (hostName.Length > MaxHostName // If 255 chars, the last one must be a dot.
                 || hostName.Length == MaxHostName && hostName[MaxHostName - 1] != '.')
             {
-                throw new ArgumentOutOfRangeException("hostName", SR.Format(SR.net_toolong,
+                throw new ArgumentOutOfRangeException(nameof(hostName), SR.Format(SR.net_toolong,
                     "hostName", MaxHostName.ToString(NumberFormatInfo.CurrentInfo)));
             }
 
@@ -229,7 +230,7 @@ namespace System.Net
         {
             if (hostName == null)
             {
-                throw new ArgumentNullException("hostName");
+                throw new ArgumentNullException(nameof(hostName));
             }
 
             if (GlobalLog.IsEnabled)
@@ -283,12 +284,12 @@ namespace System.Net
         {
             if (address == null)
             {
-                throw new ArgumentNullException("address");
+                throw new ArgumentNullException(nameof(address));
             }
 
             if (address.Equals(IPAddress.Any) || address.Equals(IPAddress.IPv6Any))
             {
-                throw new ArgumentException(SR.net_invalid_ip_addr, "address");
+                throw new ArgumentException(SR.net_invalid_ip_addr, nameof(address));
             }
 
             if (GlobalLog.IsEnabled)
@@ -323,12 +324,12 @@ namespace System.Net
             //
             if (asyncResult == null)
             {
-                throw new ArgumentNullException("asyncResult");
+                throw new ArgumentNullException(nameof(asyncResult));
             }
             ResolveAsyncResult castedResult = asyncResult as ResolveAsyncResult;
             if (castedResult == null)
             {
-                throw new ArgumentException(SR.net_io_invalidasyncresult, "asyncResult");
+                throw new ArgumentException(SR.net_io_invalidasyncresult, nameof(asyncResult));
             }
             if (castedResult.EndCalled)
             {

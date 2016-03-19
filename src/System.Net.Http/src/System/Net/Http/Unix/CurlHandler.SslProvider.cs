@@ -1,11 +1,11 @@
-// Copyright (c) Microsoft. All rights reserved.
-// Licensed under the MIT license. See LICENSE file in the project root for full license information.
+// Licensed to the .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
+// See the LICENSE file in the project root for more information.
 
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Security.Cryptography.X509Certificates;
-using System.Security.Cryptography;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Win32.SafeHandles;
@@ -24,6 +24,9 @@ namespace System.Net.Http
 
             internal static void SetSslOptions(EasyRequest easy, ClientCertificateOption clientCertOption)
             {
+                // Disable SSLv2/SSLv3, allow TLSv1.*
+                easy.SetCurlOption(Interop.Http.CURLoption.CURLOPT_SSLVERSION, (long)Interop.Http.CurlSslVersion.CURL_SSLVERSION_TLSv1);
+
                 IntPtr userPointer = IntPtr.Zero;
                 if (clientCertOption == ClientCertificateOption.Automatic)
                 {
@@ -50,7 +53,7 @@ namespace System.Net.Http
                     case CURLcode.CURLE_UNKNOWN_OPTION:
                     // Curl 7.39 and later
                     case CURLcode.CURLE_NOT_BUILT_IN:
-                        VerboseTrace("CURLOPT_SSL_CTX_FUNCTION is not supported, platform default https chain building in use");
+                        EventSourceTrace("CURLOPT_SSL_CTX_FUNCTION not supported. Platform default HTTPS chain building in use");
                         if (clientCertOption == ClientCertificateOption.Automatic)
                         {
                             throw new PlatformNotSupportedException(SR.net_http_unix_invalid_client_cert_option);
@@ -74,7 +77,7 @@ namespace System.Net.Http
 
                     if (userPointer == IntPtr.Zero)
                     {
-                        VerboseTrace("Not using client Certificate callback ");
+                        EventSourceTrace("Not using client certificate callback");
                     }
                     else
                     {
@@ -122,54 +125,73 @@ namespace System.Net.Http
 
             private static int VerifyCertChain(IntPtr storeCtxPtr, IntPtr arg)
             {
-                List<X509Certificate2> otherCerts;
-                bool success;
-
                 using (SafeX509StoreCtxHandle storeCtx = new SafeX509StoreCtxHandle(storeCtxPtr, ownsHandle: false))
-                using (X509Chain chain = new X509Chain())
                 {
-                    chain.ChainPolicy.RevocationMode = X509RevocationMode.NoCheck;
-                    chain.ChainPolicy.RevocationFlag = X509RevocationFlag.ExcludeRoot;
-
-                    IntPtr leafCertPtr = Interop.Crypto.X509StoreCtxGetTargetCert(storeCtx);
-
-                    if (IntPtr.Zero == leafCertPtr)
+                    // First use the default verification provided directly by OpenSSL.
+                    // If it succeeds in verifying the cert chain, we're done.
+                    // (Employing this instead of our custom implementation will need to be
+                    // revisited if we ever decide to a) introduce a "disallowed" store
+                    // that enables users to "untrust" certs the system trusts, or b) decide
+                    // CRL checking is required, neither of which is done by OpenSSL).
+                    int sslResult = Interop.Crypto.X509VerifyCert(storeCtx);
+                    if (sslResult == 1)
                     {
-                        Debug.Fail("Invalid target certificate");
-                        return -1;
+                        return 1;
                     }
 
-                    using (SafeSharedX509StackHandle extraStack = Interop.Crypto.X509StoreCtxGetSharedUntrusted(storeCtx))
+                    // X509_verify_cert can return < 0 in the case of programmer error
+                    Debug.Assert(sslResult == 0, "Unexpected error from X509_verify_cert: " + sslResult);
+
+                    // Only if the fast default verification fails do we then fall back to our more 
+                    // manual and more expensive verification that includes checking the user's 
+                    // certs and not just the system store ones.
+                    List<X509Certificate2> otherCerts;
+                    bool success;
+                    using (X509Chain chain = new X509Chain())
                     {
-                        int extraSize = extraStack.IsInvalid ? 0 : Interop.Crypto.GetX509StackFieldCount(extraStack);
-                        otherCerts = new List<X509Certificate2>(extraSize);
+                        chain.ChainPolicy.RevocationMode = X509RevocationMode.NoCheck;
+                        chain.ChainPolicy.RevocationFlag = X509RevocationFlag.ExcludeRoot;
 
-                        for (int i = 0; i < extraSize; i++)
+                        IntPtr leafCertPtr = Interop.Crypto.X509StoreCtxGetTargetCert(storeCtx);
+
+                        if (IntPtr.Zero == leafCertPtr)
                         {
-                            IntPtr certPtr = Interop.Crypto.GetX509StackField(extraStack, i);
+                            Debug.Fail("Invalid target certificate");
+                            return -1;
+                        }
 
-                            if (certPtr != IntPtr.Zero)
+                        using (SafeSharedX509StackHandle extraStack = Interop.Crypto.X509StoreCtxGetSharedUntrusted(storeCtx))
+                        {
+                            int extraSize = extraStack.IsInvalid ? 0 : Interop.Crypto.GetX509StackFieldCount(extraStack);
+                            otherCerts = new List<X509Certificate2>(extraSize);
+
+                            for (int i = 0; i < extraSize; i++)
                             {
-                                X509Certificate2 cert = new X509Certificate2(certPtr);
-                                otherCerts.Add(cert);
-                                chain.ChainPolicy.ExtraStore.Add(cert);
+                                IntPtr certPtr = Interop.Crypto.GetX509StackField(extraStack, i);
+
+                                if (certPtr != IntPtr.Zero)
+                                {
+                                    X509Certificate2 cert = new X509Certificate2(certPtr);
+                                    otherCerts.Add(cert);
+                                    chain.ChainPolicy.ExtraStore.Add(cert);
+                                }
                             }
+                        }
+
+                        using (X509Certificate2 leafCert = new X509Certificate2(leafCertPtr))
+                        {
+                            success = chain.Build(leafCert);
+                            AddChannelBindingToken(leafCert, arg);
                         }
                     }
 
-                    using (X509Certificate2 leafCert = new X509Certificate2(leafCertPtr))
+                    foreach (X509Certificate2 otherCert in otherCerts)
                     {
-                        success = chain.Build(leafCert);
-                        AddChannelBindingToken(leafCert, arg);
+                        otherCert.Dispose();
                     }
-                }
 
-                foreach (X509Certificate2 otherCert in otherCerts)
-                {
-                    otherCert.Dispose();
+                    return success ? 1 : 0;
                 }
-
-                return success ? 1 : 0;
             }
         }
     }

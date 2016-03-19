@@ -1,5 +1,6 @@
-// Copyright (c) Microsoft. All rights reserved.
-// Licensed under the MIT license. See LICENSE file in the project root for full license information.
+// Licensed to the .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
+// See the LICENSE file in the project root for more information.
 
 // =+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+
 //
@@ -68,11 +69,11 @@ namespace System.Linq.Parallel
                 key2Comparer = new ReverseComparer<TKey2>(key2Comparer);
             }
 
-            IComparer<Pair> pairComparer = new PairComparer<TSortKey, TKey2>(_comparer, key2Comparer);
-            Func<TInputOutput, Pair> pairKeySelector =
-                (TInputOutput elem) => new Pair(_keySelector(elem), key2Selector(elem));
+            IComparer<Pair<TSortKey, TKey2>> pairComparer = new PairComparer<TSortKey, TKey2>(_comparer, key2Comparer);
+            Func<TInputOutput, Pair<TSortKey, TKey2>> pairKeySelector =
+                (TInputOutput elem) => new Pair<TSortKey, TKey2>(_keySelector(elem), key2Selector(elem));
 
-            return new SortQueryOperator<TInputOutput, Pair>(Child, pairKeySelector, pairComparer, false);
+            return new SortQueryOperator<TInputOutput, Pair<TSortKey, TKey2>>(Child, pairKeySelector, pairComparer, false);
         }
 
         //---------------------------------------------------------------------------------------

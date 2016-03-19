@@ -1,5 +1,6 @@
-// Copyright (c) Microsoft. All rights reserved.
-// Licensed under the MIT license. See LICENSE file in the project root for full license information.
+// Licensed to the .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
+// See the LICENSE file in the project root for more information.
 
 using System.Collections.Generic;
 using System.Threading;
@@ -37,6 +38,12 @@ namespace System
             }
         }
 
+        public static object GetData(string name)
+        {
+            // If a property is missing, return null.
+            return null;
+        }
+
         /// <summary>
         /// Try to get the value of the switch.
         /// </summary>
@@ -46,9 +53,9 @@ namespace System
         public static bool TryGetSwitch(string switchName, out bool isEnabled)
         {
             if (switchName == null)
-                throw new ArgumentNullException("switchName");
+                throw new ArgumentNullException(nameof(switchName));
             if (switchName.Length == 0)
-                throw new ArgumentException(SR.Argument_EmptyName, "switchName");
+                throw new ArgumentException(SR.Argument_EmptyName, nameof(switchName));
 
             // By default, the switch is not enabled.
             isEnabled = false;
@@ -73,9 +80,9 @@ namespace System
         public static void SetSwitch(string switchName, bool isEnabled)
         {
             if (switchName == null)
-                throw new ArgumentNullException("switchName");
+                throw new ArgumentNullException(nameof(switchName));
             if (switchName.Length == 0)
-                throw new ArgumentException(SR.Argument_EmptyName, "switchName");
+                throw new ArgumentException(SR.Argument_EmptyName, nameof(switchName));
 
             SwitchValueState switchValue = isEnabled ? SwitchValueState.HasTrueValue : SwitchValueState.HasFalseValue;
 

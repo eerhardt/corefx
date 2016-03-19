@@ -1,6 +1,8 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
-// Licensed under the MIT license. See LICENSE file in the project root for full license information.
+﻿// Licensed to the .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
+// See the LICENSE file in the project root for more information.
 
+using System.Collections.Generic;
 using System.Net.Test.Common;
 using System.Runtime.InteropServices;
 using System.Threading;
@@ -94,7 +96,6 @@ namespace System.Net.Sockets.Tests
             });
         }
 
-        [ActiveIssue(3494, PlatformID.AnyUnix)]
         [Fact] // Base Case
         public void ConnectV4MappedIPAddressToV4Host_Success()
         {
@@ -176,7 +177,6 @@ namespace System.Net.Sockets.Tests
             });
         }
 
-        [ActiveIssue(3744, PlatformID.AnyUnix)]
         [Fact] // Base case
         public void ConnectV4MappedIPEndPointToV4Host_Success()
         {
@@ -225,7 +225,6 @@ namespace System.Net.Sockets.Tests
             DualModeConnect_IPEndPointToHost_Helper(IPAddress.Loopback, IPAddress.IPv6Any, true);
         }
 
-        [ActiveIssue(3494, PlatformID.AnyUnix)]
         [Fact]
         public void ConnectV6IPEndPointToDualHost_Success()
         {
@@ -248,6 +247,7 @@ namespace System.Net.Sockets.Tests
         #region Connect to IPAddress[]
 
         [Fact] // Base Case
+        [PlatformSpecific(PlatformID.Windows)]
         // "None of the discovered or specified addresses match the socket address family."
         public void Socket_ConnectV4IPAddressListToV4Host_Throws()
         {
@@ -264,126 +264,21 @@ namespace System.Net.Sockets.Tests
             }
         }
 
-        [Fact] // Base Case
-        public void ConnectMappedV4IPAddressListToV4Host_Success()
+        [Theory]
+        [MemberData(nameof(DualMode_IPAddresses_ListenOn_DualMode_Throws_Data))]
+        [PlatformSpecific(PlatformID.Windows)]
+        public void DualModeConnect_IPAddressListToHost_Throws(IPAddress[] connectTo, IPAddress listenOn, bool dualModeServer)
         {
-            DualModeConnect_IPAddressListToHost_Helper(
-                new IPAddress[] { IPAddress.Loopback.MapToIPv6() },
-                IPAddress.Loopback, false);
+            Assert.Throws<SocketException>(() => DualModeConnect_IPAddressListToHost_Success(connectTo, listenOn, dualModeServer));
         }
 
-        [Fact]
-        public void ConnectMappedV4IPAddressListToAnyV6Host_Throws()
-        {
-            Assert.Throws<SocketException>(() =>
-            {
-                DualModeConnect_IPAddressListToHost_Helper(
-                    new IPAddress[] { IPAddress.Loopback.MapToIPv6() },
-                    IPAddress.IPv6Loopback, false);
-            });
-        }
-
-        [Fact]
-        public void ConnectV4IPAddressListToV4Host_Success()
-        {
-            DualModeConnect_IPAddressListToHost_Helper(
-                new IPAddress[] { IPAddress.Loopback },
-                IPAddress.Loopback, false);
-        }
-
-        [Fact]
-        public void ConnectV4IPAddressListToSpecificV6Host_Throws()
-        {
-            Assert.Throws<SocketException>(() =>
-            {
-                DualModeConnect_IPAddressListToHost_Helper(
-                    new IPAddress[] { IPAddress.Loopback },
-                    IPAddress.IPv6Loopback, false);
-            });
-        }
-
-        [Fact]
-        public void ConnectV4IPAddressListToAnyV6Host_Throws()
-        {
-            Assert.Throws<SocketException>(() =>
-            {
-                DualModeConnect_IPAddressListToHost_Helper(
-                    new IPAddress[] { IPAddress.Loopback },
-                    IPAddress.IPv6Any, false);
-            });
-        }
-
-        [Fact]
-        public void ConnectV4IPAddressListToSpecificV6DualHost_Throws()
-        {
-            Assert.Throws<SocketException>(() =>
-            {
-                DualModeConnect_IPAddressListToHost_Helper(
-                    new IPAddress[] { IPAddress.Loopback },
-                    IPAddress.IPv6Loopback, true);
-            });
-        }
-
-        [Fact]
-        public void ConnectV4IPAddressListToAnyV6DualHost_Success()
-        {
-            DualModeConnect_IPAddressListToHost_Helper(
-                new IPAddress[] { IPAddress.Loopback },
-                IPAddress.IPv6Any, true);
-        }
-
-        [Fact]
-        public void ConnectV4V6IPAddressListToV4Host_Success()
-        {
-            DualModeConnect_IPAddressListToHost_Helper(
-                new IPAddress[] { IPAddress.Loopback, IPAddress.IPv6Loopback },
-                IPAddress.Loopback, false);
-        }
-
-        [Fact]
-        public void ConnectV6V4IPAddressListToV4Host_Success()
-        {
-            DualModeConnect_IPAddressListToHost_Helper(
-                new IPAddress[] { IPAddress.IPv6Loopback, IPAddress.Loopback },
-                IPAddress.Loopback, false);
-        }
-
-        [Fact]
-        public void ConnectV4V6IPAddressListToV6Host_Success()
-        {
-            DualModeConnect_IPAddressListToHost_Helper(
-                new IPAddress[] { IPAddress.Loopback, IPAddress.IPv6Loopback },
-                IPAddress.IPv6Loopback, false);
-        }
-
-        [Fact]
-        public void ConnectV6V4IPAddressListToV6Host_Success()
-        {
-            DualModeConnect_IPAddressListToHost_Helper(
-                new IPAddress[] { IPAddress.IPv6Loopback, IPAddress.Loopback },
-                IPAddress.IPv6Loopback, false);
-        }
-
-        [Fact]
-        public void ConnectV4V6IPAddressListToDualHost_Success()
-        {
-            DualModeConnect_IPAddressListToHost_Helper(
-                new IPAddress[] { IPAddress.Loopback, IPAddress.IPv6Loopback },
-                IPAddress.IPv6Any, true);
-        }
-
-        [Fact]
-        public void ConnectV6V4IPAddressListToDualHost_Success()
-        {
-            DualModeConnect_IPAddressListToHost_Helper(
-                new IPAddress[] { IPAddress.IPv6Loopback, IPAddress.Loopback },
-                IPAddress.IPv6Any, true);
-        }
-
-        private void DualModeConnect_IPAddressListToHost_Helper(IPAddress[] connectTo, IPAddress listenOn, bool dualModeServer)
+        [Theory]
+        [MemberData(nameof(DualMode_IPAddresses_ListenOn_DualMode_Success_Data))]
+        [PlatformSpecific(PlatformID.Windows)]
+        public void DualModeConnect_IPAddressListToHost_Success(IPAddress[] connectTo, IPAddress listenOn, bool dualModeServer)
         {
             int port;
-            Socket socket = new Socket(SocketType.Stream, ProtocolType.Tcp);
+            using (Socket socket = new Socket(SocketType.Stream, ProtocolType.Tcp))
             using (SocketServer server = new SocketServer(_log, listenOn, dualModeServer, out port))
             {
                 socket.Connect(connectTo, port);
@@ -395,26 +290,10 @@ namespace System.Net.Sockets.Tests
 
         #region Connect to host string
 
-        [Fact]
-        public void ConnectLoopbackToV4Host_Success()
-        {
-            DualModeConnect_LoopbackDnsToHost_Helper(IPAddress.Loopback, false);
-        }
-
-        [Fact]
-        [ActiveIssue(4002, PlatformID.AnyUnix)]
-        public void ConnectLoopbackToV6Host_Success()
-        {
-            DualModeConnect_LoopbackDnsToHost_Helper(IPAddress.IPv6Loopback, false);
-        }
-
-        [Fact]
-        public void ConnectLoopbackToDualHost_Success()
-        {
-            DualModeConnect_LoopbackDnsToHost_Helper(IPAddress.IPv6Any, true);
-        }
-
-        private void DualModeConnect_LoopbackDnsToHost_Helper(IPAddress listenOn, bool dualModeServer)
+        [Theory]
+        [MemberData(nameof(DualMode_Connect_IPAddress_DualMode_Data))]
+        [PlatformSpecific(PlatformID.Windows)]
+        public void DualModeConnect_LoopbackDnsToHost_Helper(IPAddress listenOn, bool dualModeServer)
         {
             int port;
             Socket socket = new Socket(SocketType.Stream, ProtocolType.Tcp);
@@ -429,32 +308,16 @@ namespace System.Net.Sockets.Tests
 
         #region Connect to DnsEndPoint
 
-        [Fact]
-        public void DualModeSocket_DnsEndPointToV4Host_Success()
-        {
-            DualModeConnect_DnsEndPointToHost_Helper(IPAddress.Loopback, false, AddressFamily.Unspecified);
-        }
-
-        [Fact]
-        [ActiveIssue(4002, PlatformID.AnyUnix)]
-        public void DualModeSocket_DnsEndPointToV6Host_Success()
-        {
-            DualModeConnect_DnsEndPointToHost_Helper(IPAddress.IPv6Loopback, false, AddressFamily.Unspecified);
-        }
-
-        [Fact]
-        public void DualModeSocket_DnsEndPointToDualHost_Success()
-        {
-            DualModeConnect_DnsEndPointToHost_Helper(IPAddress.IPv6Any, true, AddressFamily.Unspecified);
-        }
-
-        private void DualModeConnect_DnsEndPointToHost_Helper(IPAddress listenOn, bool dualModeServer, AddressFamily addressFamily)
+        [Theory]
+        [MemberData(nameof(DualMode_Connect_IPAddress_DualMode_Data))]
+        [PlatformSpecific(PlatformID.Windows)]
+        private void DualModeConnect_DnsEndPointToHost_Helper(IPAddress listenOn, bool dualModeServer)
         {
             int port;
             Socket socket = new Socket(SocketType.Stream, ProtocolType.Tcp);
             using (SocketServer server = new SocketServer(_log, listenOn, dualModeServer, out port))
             {
-                socket.Connect(new DnsEndPoint("localhost", port, addressFamily));
+                socket.Connect(new DnsEndPoint("localhost", port, AddressFamily.Unspecified));
                 Assert.True(socket.Connected);
             }
         }
@@ -607,54 +470,9 @@ namespace System.Net.Sockets.Tests
 
         #region BeginConnect to IPAddress[]
 
-        [Fact]
-        public void BeginConnectV4V6IPAddressListToV4Host_Success()
-        {
-            DualModeBeginConnect_IPAddressListToHost_Helper(
-                new IPAddress[] { IPAddress.Loopback, IPAddress.IPv6Loopback },
-                IPAddress.Loopback, false);
-        }
-
-        [Fact]
-        public void BeginConnectV6V4IPAddressListToV4Host_Success()
-        {
-            DualModeBeginConnect_IPAddressListToHost_Helper(
-                new IPAddress[] { IPAddress.IPv6Loopback, IPAddress.Loopback },
-                IPAddress.Loopback, false);
-        }
-
-        [Fact]
-        public void BeginConnectV4V6IPAddressListToV6Host_Success()
-        {
-            DualModeBeginConnect_IPAddressListToHost_Helper(
-                new IPAddress[] { IPAddress.Loopback, IPAddress.IPv6Loopback },
-                IPAddress.IPv6Loopback, false);
-        }
-
-        [Fact]
-        public void BeginConnectV6V4IPAddressListToV6Host_Success()
-        {
-            DualModeBeginConnect_IPAddressListToHost_Helper(
-                new IPAddress[] { IPAddress.IPv6Loopback, IPAddress.Loopback },
-                IPAddress.IPv6Loopback, false);
-        }
-
-        [Fact]
-        public void BeginConnectV4V6IPAddressListToDualHost_Success()
-        {
-            DualModeBeginConnect_IPAddressListToHost_Helper(
-                new IPAddress[] { IPAddress.Loopback, IPAddress.IPv6Loopback },
-                IPAddress.IPv6Any, true);
-        }
-
-        [Fact]
-        public void BeginConnectV6V4IPAddressListToDualHost_Success()
-        {
-            DualModeBeginConnect_IPAddressListToHost_Helper(
-                new IPAddress[] { IPAddress.IPv6Loopback, IPAddress.Loopback },
-                IPAddress.IPv6Any, true);
-        }
-
+        [Theory]
+        [MemberData(nameof(DualMode_IPAddresses_ListenOn_DualMode_Data))]
+        [PlatformSpecific(PlatformID.Windows)]
         private void DualModeBeginConnect_IPAddressListToHost_Helper(IPAddress[] connectTo, IPAddress listenOn, bool dualModeServer)
         {
             int port;
@@ -671,26 +489,10 @@ namespace System.Net.Sockets.Tests
 
         #region BeginConnect to host string
 
-        [Fact]
-        public void BeginConnectLoopbackToV4Host_Success()
-        {
-            DualModeBeginConnect_LoopbackDnsToHost_Helper(IPAddress.Loopback, false);
-        }
-
-        [Fact]
-        [ActiveIssue(4002, PlatformID.AnyUnix)]
-        public void BeginConnectLoopbackToV6Host_Success()
-        {
-            DualModeBeginConnect_LoopbackDnsToHost_Helper(IPAddress.IPv6Loopback, false);
-        }
-
-        [Fact]
-        public void BeginConnectLoopbackToDualHost_Success()
-        {
-            DualModeBeginConnect_LoopbackDnsToHost_Helper(IPAddress.IPv6Any, true);
-        }
-
-        private void DualModeBeginConnect_LoopbackDnsToHost_Helper(IPAddress listenOn, bool dualModeServer)
+        [Theory]
+        [MemberData(nameof(DualMode_Connect_IPAddress_DualMode_Data))]
+        [PlatformSpecific(PlatformID.Windows)]
+        public void DualModeBeginConnect_LoopbackDnsToHost_Helper(IPAddress listenOn, bool dualModeServer)
         {
             int port;
             Socket socket = new Socket(SocketType.Stream, ProtocolType.Tcp);
@@ -706,26 +508,10 @@ namespace System.Net.Sockets.Tests
 
         #region BeginConnect to DnsEndPoint
 
-        [Fact]
-        public void DualModeSocket_BeginConnectDnsEndPointToV4Host_Success()
-        {
-            DualModeBeginConnect_DnsEndPointToHost_Helper(IPAddress.Loopback, false);
-        }
-
-        [Fact]
-        [ActiveIssue(4002, PlatformID.AnyUnix)]
-        public void DualModeSocket_BeginConnectDnsEndPointToV6Host_Success()
-        {
-            DualModeBeginConnect_DnsEndPointToHost_Helper(IPAddress.IPv6Loopback, false);
-        }
-
-        [Fact]
-        public void DualModeSocket_BeginConnectDnsEndPointToDualHost_Success()
-        {
-            DualModeBeginConnect_DnsEndPointToHost_Helper(IPAddress.IPv6Any, true);
-        }
-
-        private void DualModeBeginConnect_DnsEndPointToHost_Helper(IPAddress listenOn, bool dualModeServer)
+        [Theory]
+        [MemberData(nameof(DualMode_Connect_IPAddress_DualMode_Data))]
+        [PlatformSpecific(PlatformID.Windows)]
+        public void DualModeBeginConnect_DnsEndPointToHost_Helper(IPAddress listenOn, bool dualModeServer)
         {
             int port;
             Socket socket = new Socket(SocketType.Stream, ProtocolType.Tcp);
@@ -789,7 +575,6 @@ namespace System.Net.Sockets.Tests
             });
         }
 
-        [ActiveIssue(3682, PlatformID.AnyUnix)]
         [Fact]
         public void ConnectAsyncV4IPEndPointToDualHost_Success()
         {
@@ -829,29 +614,13 @@ namespace System.Net.Sockets.Tests
 
         #region ConnectAsync to DnsEndPoint
 
-        [Fact]
-        public void DualModeSocket_ConnectAsyncDnsEndPointToV4Host_Success()
-        {
-            DualModeConnectAsync_DnsEndPointToHost_Helper(IPAddress.Loopback, false);
-        }
-
-        [Fact]
-        [ActiveIssue(4002, PlatformID.AnyUnix)]
-        public void DualModeSocket_ConnectAsyncDnsEndPointToV6Host_Success()
-        {
-            DualModeConnectAsync_DnsEndPointToHost_Helper(IPAddress.IPv6Loopback, false);
-        }
-
-        [Fact]
-        public void DualModeSocket_ConnectAsyncDnsEndPointToDualHost_Success()
-        {
-            DualModeConnectAsync_DnsEndPointToHost_Helper(IPAddress.IPv6Any, true);
-        }
-
-        private void DualModeConnectAsync_DnsEndPointToHost_Helper(IPAddress listenOn, bool dualModeServer)
+        [Theory]
+        [MemberData(nameof(DualMode_Connect_IPAddress_DualMode_Data))]
+        [PlatformSpecific(PlatformID.Windows)]
+        public void DualModeConnectAsync_Instance_DnsEndPointToHost_Helper(IPAddress listenOn, bool dualModeServer)
         {
             int port;
-            Socket socket = new Socket(SocketType.Stream, ProtocolType.Tcp);
+            using (Socket socket = new Socket(SocketType.Stream, ProtocolType.Tcp))
             using (SocketServer server = new SocketServer(_log, listenOn, dualModeServer, out port))
             {
                 ManualResetEvent waitHandle = new ManualResetEvent(false);
@@ -868,6 +637,32 @@ namespace System.Net.Sockets.Tests
                     throw new SocketException((int)args.SocketError);
                 }
                 Assert.True(socket.Connected);
+            }
+        }
+
+        [Theory]
+        [MemberData(nameof(DualMode_Connect_IPAddress_DualMode_Data))]
+        [ActiveIssue(4002, PlatformID.AnyUnix)]
+        public void DualModeConnectAsync_Static_DnsEndPointToHost_Helper(IPAddress listenOn, bool dualModeServer)
+        {
+            int port;
+            using (SocketServer server = new SocketServer(_log, listenOn, dualModeServer, out port))
+            {
+                ManualResetEvent waitHandle = new ManualResetEvent(false);
+                SocketAsyncEventArgs args = new SocketAsyncEventArgs();
+                args.Completed += new EventHandler<SocketAsyncEventArgs>(AsyncCompleted);
+                args.RemoteEndPoint = new DnsEndPoint("localhost", port);
+                args.UserToken = waitHandle;
+
+                Socket.ConnectAsync(SocketType.Stream, ProtocolType.Tcp, args);
+
+                Assert.True(waitHandle.WaitOne(Configuration.PassingTestTimeout), "Timed out while waiting for connection");
+                if (args.SocketError != SocketError.Success)
+                {
+                    throw new SocketException((int)args.SocketError);
+                }
+                Assert.True(args.ConnectSocket.Connected);
+                args.ConnectSocket.Dispose();
             }
         }
 
@@ -978,6 +773,7 @@ namespace System.Net.Sockets.Tests
         }
 
         [Fact]
+        [ActiveIssue(5832, PlatformID.AnyUnix)]
         public void AcceptV6BoundToSpecificV4_CantConnect()
         {
             Assert.Throws<SocketException>(() =>
@@ -987,6 +783,7 @@ namespace System.Net.Sockets.Tests
         }
 
         [Fact]
+        [ActiveIssue(5832, PlatformID.AnyUnix)]
         public void AcceptV4BoundToSpecificV6_CantConnect()
         {
             Assert.Throws<SocketException>(() =>
@@ -996,6 +793,7 @@ namespace System.Net.Sockets.Tests
         }
 
         [Fact]
+        [ActiveIssue(5832, PlatformID.AnyUnix)]
         public void AcceptV6BoundToAnyV4_CantConnect()
         {
             Assert.Throws<SocketException>(() =>
@@ -1536,6 +1334,7 @@ namespace System.Net.Sockets.Tests
         }
 
         [Fact] // Base case
+        [PlatformSpecific(~PlatformID.OSX)]
         public void Socket_ReceiveFromDnsEndPoint_Throws()
         {
             // "The parameter remoteEP must not be of type DnsEndPoint."
@@ -1551,32 +1350,35 @@ namespace System.Net.Sockets.Tests
         }
 
         [Fact]
-        [ActiveIssue(4004, PlatformID.OSX)]
+        [PlatformSpecific(~PlatformID.OSX)]
         public void ReceiveFromV4BoundToSpecificV4_Success()
         {
             ReceiveFrom_Helper(IPAddress.Loopback, IPAddress.Loopback);
         }
 
         [Fact]
-        [ActiveIssue(4004, PlatformID.OSX)]
+        [PlatformSpecific(~PlatformID.OSX)]
         public void ReceiveFromV4BoundToAnyV4_Success()
         {
             ReceiveFrom_Helper(IPAddress.Any, IPAddress.Loopback);
         }
 
         [Fact]
+        [PlatformSpecific(~PlatformID.OSX)]
         public void ReceiveFromV6BoundToSpecificV6_Success()
         {
             ReceiveFrom_Helper(IPAddress.IPv6Loopback, IPAddress.IPv6Loopback);
         }
 
         [Fact]
+        [PlatformSpecific(~PlatformID.OSX)]
         public void ReceiveFromV6BoundToAnyV6_Success()
         {
             ReceiveFrom_Helper(IPAddress.IPv6Any, IPAddress.IPv6Loopback);
         }
 
         [Fact]
+        [PlatformSpecific(~PlatformID.OSX)]
         public void ReceiveFromV6BoundToSpecificV4_NotReceived()
         {
             Assert.Throws<SocketException>(() =>
@@ -1586,7 +1388,7 @@ namespace System.Net.Sockets.Tests
         }
 
         [Fact]
-        [PlatformSpecific(~PlatformID.Linux)]
+        [PlatformSpecific(~(PlatformID.Linux | PlatformID.OSX))]
         public void ReceiveFromV4BoundToSpecificV6_NotReceived()
         {
             Assert.Throws<SocketException>(() =>
@@ -1613,6 +1415,7 @@ namespace System.Net.Sockets.Tests
         }
 
         [Fact]
+        [PlatformSpecific(~PlatformID.OSX)]
         public void ReceiveFromV6BoundToAnyV4_NotReceived()
         {
             Assert.Throws<SocketException>(() =>
@@ -1622,6 +1425,7 @@ namespace System.Net.Sockets.Tests
         }
 
         [Fact]
+        [PlatformSpecific(~PlatformID.OSX)]
         public void ReceiveFromV4BoundToAnyV6_Success()
         {
             ReceiveFrom_Helper(IPAddress.IPv6Any, IPAddress.Loopback);
@@ -1667,6 +1471,7 @@ namespace System.Net.Sockets.Tests
         }
 
         [Fact] // Base case
+        [PlatformSpecific(~PlatformID.OSX)]
         // "The parameter remoteEP must not be of type DnsEndPoint."
         public void Socket_BeginReceiveFromDnsEndPoint_Throws()
         {
@@ -1683,30 +1488,35 @@ namespace System.Net.Sockets.Tests
         }
 
         [Fact]
+        [PlatformSpecific(~PlatformID.OSX)]
         public void BeginReceiveFromV4BoundToSpecificV4_Success()
         {
             BeginReceiveFrom_Helper(IPAddress.Loopback, IPAddress.Loopback);
         }
 
         [Fact]
+        [PlatformSpecific(~PlatformID.OSX)]
         public void BeginReceiveFromV4BoundToAnyV4_Success()
         {
             BeginReceiveFrom_Helper(IPAddress.Any, IPAddress.Loopback);
         }
 
         [Fact]
+        [PlatformSpecific(~PlatformID.OSX)]
         public void BeginReceiveFromV6BoundToSpecificV6_Success()
         {
             BeginReceiveFrom_Helper(IPAddress.IPv6Loopback, IPAddress.IPv6Loopback);
         }
 
         [Fact]
+        [PlatformSpecific(~PlatformID.OSX)]
         public void BeginReceiveFromV6BoundToAnyV6_Success()
         {
             BeginReceiveFrom_Helper(IPAddress.IPv6Any, IPAddress.IPv6Loopback);
         }
 
         [Fact]
+        [PlatformSpecific(~PlatformID.OSX)]
         public void BeginReceiveFromV6BoundToSpecificV4_NotReceived()
         {
             Assert.Throws<TimeoutException>(() =>
@@ -1716,7 +1526,7 @@ namespace System.Net.Sockets.Tests
         }
 
         [Fact]
-        [PlatformSpecific(~PlatformID.Linux)]
+        [PlatformSpecific(~(PlatformID.Linux | PlatformID.OSX))]
         public void BeginReceiveFromV4BoundToSpecificV6_NotReceived()
         {
             Assert.Throws<TimeoutException>(() =>
@@ -1743,6 +1553,7 @@ namespace System.Net.Sockets.Tests
         }
 
         [Fact]
+        [PlatformSpecific(~PlatformID.OSX)]
         public void BeginReceiveFromV6BoundToAnyV4_NotReceived()
         {
             Assert.Throws<TimeoutException>(() =>
@@ -1752,6 +1563,7 @@ namespace System.Net.Sockets.Tests
         }
 
         [Fact]
+        [PlatformSpecific(~PlatformID.OSX)]
         public void BeginReceiveFromV4BoundToAnyV6_Success()
         {
             BeginReceiveFrom_Helper(IPAddress.IPv6Any, IPAddress.Loopback);
@@ -1814,6 +1626,7 @@ namespace System.Net.Sockets.Tests
         }
 
         [Fact] // Base case
+        [PlatformSpecific(~PlatformID.OSX)]
         // "The parameter remoteEP must not be of type DnsEndPoint."
         public void Socket_ReceiveFromAsyncDnsEndPoint_Throws()
         {
@@ -1833,31 +1646,35 @@ namespace System.Net.Sockets.Tests
         }
 
         [Fact]
+        [PlatformSpecific(~PlatformID.OSX)]
         public void ReceiveFromAsyncV4BoundToSpecificV4_Success()
         {
             ReceiveFromAsync_Helper(IPAddress.Loopback, IPAddress.Loopback);
         }
 
         [Fact]
-        [ActiveIssue(4004, PlatformID.OSX)]
+        [PlatformSpecific(~PlatformID.OSX)]
         public void ReceiveFromAsyncV4BoundToAnyV4_Success()
         {
             ReceiveFromAsync_Helper(IPAddress.Any, IPAddress.Loopback);
         }
 
         [Fact]
+        [PlatformSpecific(~PlatformID.OSX)]
         public void ReceiveFromAsyncV6BoundToSpecificV6_Success()
         {
             ReceiveFromAsync_Helper(IPAddress.IPv6Loopback, IPAddress.IPv6Loopback);
         }
 
         [Fact]
+        [PlatformSpecific(~PlatformID.OSX)]
         public void ReceiveFromAsyncV6BoundToAnyV6_Success()
         {
             ReceiveFromAsync_Helper(IPAddress.IPv6Any, IPAddress.IPv6Loopback);
         }
 
         [Fact]
+        [PlatformSpecific(~PlatformID.OSX)]
         public void ReceiveFromAsyncV6BoundToSpecificV4_NotReceived()
         {
             Assert.Throws<TimeoutException>(() =>
@@ -1867,6 +1684,7 @@ namespace System.Net.Sockets.Tests
         }
 
         [Fact]
+        [PlatformSpecific(~PlatformID.OSX)]
         public void ReceiveFromAsyncV4BoundToSpecificV6_NotReceived()
         {
             Assert.Throws<TimeoutException>(() =>
@@ -1876,6 +1694,7 @@ namespace System.Net.Sockets.Tests
         }
 
         [Fact]
+        [PlatformSpecific(~PlatformID.OSX)]
         public void ReceiveFromAsyncV6BoundToAnyV4_NotReceived()
         {
             Assert.Throws<TimeoutException>(() =>
@@ -1885,6 +1704,7 @@ namespace System.Net.Sockets.Tests
         }
 
         [Fact]
+        [PlatformSpecific(~PlatformID.OSX)]
         public void ReceiveFromAsyncV4BoundToAnyV6_Success()
         {
             ReceiveFromAsync_Helper(IPAddress.IPv6Any, IPAddress.Loopback);
@@ -1950,6 +1770,7 @@ namespace System.Net.Sockets.Tests
         }
 
         [Fact] // Base case
+        [PlatformSpecific(~PlatformID.OSX)]
         // "The parameter remoteEP must not be of type DnsEndPoint."
         public void Socket_ReceiveMessageFromDnsEndPoint_Throws()
         {
@@ -1968,48 +1789,49 @@ namespace System.Net.Sockets.Tests
         }
 
         [Fact] // Base case
-        [ActiveIssue(4004, PlatformID.OSX)]
+        [PlatformSpecific(~PlatformID.OSX)]
         public void ReceiveMessageFromV4BoundToSpecificMappedV4_Success()
         {
             ReceiveMessageFrom_Helper(IPAddress.Loopback.MapToIPv6(), IPAddress.Loopback);
         }
 
         [Fact] // Base case
-        [ActiveIssue(4004, PlatformID.OSX)]
+        [PlatformSpecific(~PlatformID.OSX)]
         public void ReceiveMessageFromV4BoundToAnyMappedV4_Success()
         {
             ReceiveMessageFrom_Helper(IPAddress.Any.MapToIPv6(), IPAddress.Loopback);
         }
 
         [Fact]
-        [ActiveIssue(4004, PlatformID.OSX)]
+        [PlatformSpecific(~PlatformID.OSX)]
         public void ReceiveMessageFromV4BoundToSpecificV4_Success()
         {
             ReceiveMessageFrom_Helper(IPAddress.Loopback, IPAddress.Loopback);
         }
 
         [Fact]
-        [ActiveIssue(4004, PlatformID.OSX)]
+        [PlatformSpecific(~PlatformID.OSX)]
         public void ReceiveMessageFromV4BoundToAnyV4_Success()
         {
             ReceiveMessageFrom_Helper(IPAddress.Any, IPAddress.Loopback);
         }
 
         [Fact]
-        [ActiveIssue(4004, PlatformID.OSX)]
+        [PlatformSpecific(~PlatformID.OSX)]
         public void ReceiveMessageFromV6BoundToSpecificV6_Success()
         {
             ReceiveMessageFrom_Helper(IPAddress.IPv6Loopback, IPAddress.IPv6Loopback);
         }
 
         [Fact]
-        [ActiveIssue(4004, PlatformID.OSX)]
+        [PlatformSpecific(~PlatformID.OSX)]
         public void ReceiveMessageFromV6BoundToAnyV6_Success()
         {
             ReceiveMessageFrom_Helper(IPAddress.IPv6Any, IPAddress.IPv6Loopback);
         }
 
         [Fact]
+        [PlatformSpecific(~PlatformID.OSX)]
         public void ReceiveMessageFromV6BoundToSpecificV4_NotReceived()
         {
             Assert.Throws<SocketException>(() =>
@@ -2019,7 +1841,7 @@ namespace System.Net.Sockets.Tests
         }
 
         [Fact]
-        [PlatformSpecific(~PlatformID.Linux)]
+        [PlatformSpecific(~(PlatformID.Linux | PlatformID.OSX))]
         public void ReceiveMessageFromV4BoundToSpecificV6_NotReceived()
         {
             Assert.Throws<SocketException>(() =>
@@ -2046,6 +1868,7 @@ namespace System.Net.Sockets.Tests
         }
 
         [Fact]
+        [PlatformSpecific(~PlatformID.OSX)]
         public void ReceiveMessageFromV6BoundToAnyV4_NotReceived()
         {
             Assert.Throws<SocketException>(() =>
@@ -2055,7 +1878,7 @@ namespace System.Net.Sockets.Tests
         }
 
         [Fact]
-        [ActiveIssue(4004, PlatformID.OSX)]
+        [PlatformSpecific(~PlatformID.OSX)]
         public void ReceiveMessageFromV4BoundToAnyV6_Success()
         {
             ReceiveMessageFrom_Helper(IPAddress.IPv6Any, IPAddress.Loopback);
@@ -2141,6 +1964,7 @@ namespace System.Net.Sockets.Tests
         }
 
         [Fact] // Base case
+        [PlatformSpecific(~PlatformID.OSX)]
         // "The parameter remoteEP must not be of type DnsEndPoint."
         public void Socket_BeginReceiveMessageFromDnsEndPoint_Throws()
         {
@@ -2158,48 +1982,49 @@ namespace System.Net.Sockets.Tests
         }
 
         [Fact] // Base case
-        [ActiveIssue(4004, PlatformID.OSX)]
+        [PlatformSpecific(~PlatformID.OSX)]
         public void BeginReceiveMessageFromV4BoundToSpecificMappedV4_Success()
         {
             BeginReceiveMessageFrom_Helper(IPAddress.Loopback.MapToIPv6(), IPAddress.Loopback);
         }
 
         [Fact] // Base case
-        [ActiveIssue(4004, PlatformID.OSX)]
+        [PlatformSpecific(~PlatformID.OSX)]
         public void BeginReceiveMessageFromV4BoundToAnyMappedV4_Success()
         {
             BeginReceiveMessageFrom_Helper(IPAddress.Any.MapToIPv6(), IPAddress.Loopback);
         }
 
         [Fact]
-        [ActiveIssue(4004, PlatformID.OSX)]
+        [PlatformSpecific(~PlatformID.OSX)]
         public void BeginReceiveMessageFromV4BoundToSpecificV4_Success()
         {
             BeginReceiveMessageFrom_Helper(IPAddress.Loopback, IPAddress.Loopback);
         }
 
         [Fact]
-        [ActiveIssue(4004, PlatformID.OSX)]
+        [PlatformSpecific(~PlatformID.OSX)]
         public void BeginReceiveMessageFromV4BoundToAnyV4_Success()
         {
             BeginReceiveMessageFrom_Helper(IPAddress.Any, IPAddress.Loopback);
         }
 
         [Fact]
-        [ActiveIssue(4004, PlatformID.OSX)]
+        [PlatformSpecific(~PlatformID.OSX)]
         public void BeginReceiveMessageFromV6BoundToSpecificV6_Success()
         {
             BeginReceiveMessageFrom_Helper(IPAddress.IPv6Loopback, IPAddress.IPv6Loopback);
         }
 
         [Fact]
-        [ActiveIssue(4004, PlatformID.OSX)]
+        [PlatformSpecific(~PlatformID.OSX)]
         public void BeginReceiveMessageFromV6BoundToAnyV6_Success()
         {
             BeginReceiveMessageFrom_Helper(IPAddress.IPv6Any, IPAddress.IPv6Loopback);
         }
 
         [Fact]
+        [PlatformSpecific(~PlatformID.OSX)]
         public void BeginReceiveMessageFromV6BoundToSpecificV4_NotReceived()
         {
             Assert.Throws<TimeoutException>(() =>
@@ -2209,7 +2034,7 @@ namespace System.Net.Sockets.Tests
         }
 
         [Fact]
-        [PlatformSpecific(~PlatformID.Linux)]
+        [PlatformSpecific(~(PlatformID.Linux | PlatformID.OSX))]
         public void BeginReceiveMessageFromV4BoundToSpecificV6_NotReceived()
         {
             Assert.Throws<TimeoutException>(() =>
@@ -2236,6 +2061,7 @@ namespace System.Net.Sockets.Tests
         }
 
         [Fact]
+        [PlatformSpecific(~PlatformID.OSX)]
         public void BeginReceiveMessageFromV6BoundToAnyV4_NotReceived()
         {
             Assert.Throws<TimeoutException>(() =>
@@ -2245,7 +2071,7 @@ namespace System.Net.Sockets.Tests
         }
 
         [Fact]
-        [ActiveIssue(4004, PlatformID.OSX)]
+        [PlatformSpecific(~PlatformID.OSX)]
         public void BeginReceiveMessageFromV4BoundToAnyV6_Success()
         {
             BeginReceiveMessageFrom_Helper(IPAddress.IPv6Any, IPAddress.Loopback);
@@ -2316,6 +2142,7 @@ namespace System.Net.Sockets.Tests
         }
 
         [Fact] // Base case
+        [PlatformSpecific(~PlatformID.OSX)]
         // "The parameter remoteEP must not be of type DnsEndPoint."
         public void Socket_ReceiveMessageFromAsyncDnsEndPoint_Throws()
         {
@@ -2335,48 +2162,49 @@ namespace System.Net.Sockets.Tests
         }
 
         [Fact] // Base case
-        [ActiveIssue(4004, PlatformID.OSX)]
+        [PlatformSpecific(~PlatformID.OSX)]
         public void ReceiveMessageFromAsyncV4BoundToSpecificMappedV4_Success()
         {
             ReceiveMessageFromAsync_Helper(IPAddress.Loopback.MapToIPv6(), IPAddress.Loopback);
         }
 
         [Fact] // Base case
-        [ActiveIssue(4004, PlatformID.OSX)]
+        [PlatformSpecific(~PlatformID.OSX)]
         public void ReceiveMessageFromAsyncV4BoundToAnyMappedV4_Success()
         {
             ReceiveMessageFromAsync_Helper(IPAddress.Any.MapToIPv6(), IPAddress.Loopback);
         }
 
         [Fact]
-        [ActiveIssue(4004, PlatformID.OSX)]
+        [PlatformSpecific(~PlatformID.OSX)]
         public void ReceiveMessageFromAsyncV4BoundToSpecificV4_Success()
         {
             ReceiveMessageFromAsync_Helper(IPAddress.Loopback, IPAddress.Loopback);
         }
 
         [Fact]
-        [ActiveIssue(4004, PlatformID.OSX)]
+        [PlatformSpecific(~PlatformID.OSX)]
         public void ReceiveMessageFromAsyncV4BoundToAnyV4_Success()
         {
             ReceiveMessageFromAsync_Helper(IPAddress.Any, IPAddress.Loopback);
         }
 
         [Fact]
-        [ActiveIssue(4004, PlatformID.OSX)]
+        [PlatformSpecific(~PlatformID.OSX)]
         public void ReceiveMessageFromAsyncV6BoundToSpecificV6_Success()
         {
             ReceiveMessageFromAsync_Helper(IPAddress.IPv6Loopback, IPAddress.IPv6Loopback);
         }
 
         [Fact]
-        [ActiveIssue(4004, PlatformID.OSX)]
+        [PlatformSpecific(~PlatformID.OSX)]
         public void ReceiveMessageFromAsyncV6BoundToAnyV6_Success()
         {
             ReceiveMessageFromAsync_Helper(IPAddress.IPv6Any, IPAddress.IPv6Loopback);
         }
 
         [Fact]
+        [PlatformSpecific(~PlatformID.OSX)]
         public void ReceiveMessageFromAsyncV6BoundToSpecificV4_NotReceived()
         {
             Assert.Throws<TimeoutException>(() =>
@@ -2386,7 +2214,7 @@ namespace System.Net.Sockets.Tests
         }
 
         [Fact]
-        [PlatformSpecific(~PlatformID.Linux)]
+        [PlatformSpecific(~(PlatformID.Linux | PlatformID.OSX))]
         public void ReceiveMessageFromAsyncV4BoundToSpecificV6_NotReceived()
         {
             Assert.Throws<TimeoutException>(() =>
@@ -2413,6 +2241,7 @@ namespace System.Net.Sockets.Tests
         }
 
         [Fact]
+        [PlatformSpecific(~PlatformID.OSX)]
         public void ReceiveMessageFromAsyncV6BoundToAnyV4_NotReceived()
         {
             Assert.Throws<TimeoutException>(() =>
@@ -2422,7 +2251,7 @@ namespace System.Net.Sockets.Tests
         }
 
         [Fact]
-        [ActiveIssue(4004, PlatformID.OSX)]
+        [PlatformSpecific(~PlatformID.OSX)]
         public void ReceiveMessageFromAsyncV4BoundToAnyV6_Success()
         {
             ReceiveMessageFromAsync_Helper(IPAddress.IPv6Any, IPAddress.Loopback);
@@ -2472,6 +2301,36 @@ namespace System.Net.Sockets.Tests
 
         #endregion ReceiveMessageFrom
 
+        [Fact]
+        [PlatformSpecific(PlatformID.OSX)]
+        public void BeginReceiveFrom_NotSupported()
+        {
+            using (Socket sock = new Socket(SocketType.Dgram, ProtocolType.Udp))
+            {
+                EndPoint ep = new IPEndPoint(IPAddress.Any, 0);
+                sock.Bind(ep);
+
+                byte[] buf = new byte[1];
+
+                Assert.Throws<PlatformNotSupportedException>(() => sock.BeginReceiveFrom(buf, 0, buf.Length, SocketFlags.None, ref ep, null, null));
+            }
+        }
+
+        [Fact]
+        [PlatformSpecific(PlatformID.OSX)]
+        public void BeginReceiveMessageFrom_NotSupported()
+        {
+            using (Socket sock = new Socket(SocketType.Dgram, ProtocolType.Udp))
+            {
+                EndPoint ep = new IPEndPoint(IPAddress.Any, 0);
+                sock.Bind(ep);
+
+                byte[] buf = new byte[1];
+
+                Assert.Throws<PlatformNotSupportedException>(() => sock.BeginReceiveMessageFrom(buf, 0, buf.Length, SocketFlags.None, ref ep, null, null));
+            }
+        }
+
         #endregion Connectionless
 
         #region GC Finalizer test
@@ -2491,10 +2350,45 @@ namespace System.Net.Sockets.Tests
 
         #region Helpers
 
+        public static readonly object[][] DualMode_Connect_IPAddress_DualMode_Data = {
+            new object[] { IPAddress.Loopback, false },
+            new object[] { IPAddress.IPv6Loopback, false },
+            new object[] { IPAddress.IPv6Any, true },
+        };
+
+        public static readonly object[][] DualMode_IPAddresses_ListenOn_DualMode_Data = {
+            new object[] { new IPAddress[] { IPAddress.Loopback, IPAddress.IPv6Loopback }, IPAddress.Loopback, false },
+            new object[] { new IPAddress[] { IPAddress.IPv6Loopback, IPAddress.Loopback }, IPAddress.Loopback, false },
+            new object[] { new IPAddress[] { IPAddress.Loopback, IPAddress.IPv6Loopback }, IPAddress.IPv6Loopback, false },
+            new object[] { new IPAddress[] { IPAddress.IPv6Loopback, IPAddress.Loopback }, IPAddress.IPv6Loopback, false },
+            new object[] { new IPAddress[] { IPAddress.Loopback, IPAddress.IPv6Loopback }, IPAddress.IPv6Any, true },
+            new object[] { new IPAddress[] { IPAddress.IPv6Loopback, IPAddress.Loopback }, IPAddress.IPv6Any, true },
+        };
+
+        public static readonly object[][] DualMode_IPAddresses_ListenOn_DualMode_Throws_Data = {
+            new object[] { new IPAddress[] { IPAddress.Loopback.MapToIPv6() }, IPAddress.IPv6Loopback, false },
+            new object[] { new IPAddress[] { IPAddress.Loopback }, IPAddress.IPv6Loopback, false },
+            new object[] { new IPAddress[] { IPAddress.Loopback }, IPAddress.IPv6Any, false },
+            new object[] { new IPAddress[] { IPAddress.Loopback }, IPAddress.IPv6Loopback, true },
+        };
+
+        public static readonly object[][] DualMode_IPAddresses_ListenOn_DualMode_Success_Data = {
+            new object[] { new IPAddress[] { IPAddress.Loopback.MapToIPv6() }, IPAddress.Loopback, false },
+            new object[] { new IPAddress[] { IPAddress.Loopback }, IPAddress.Loopback, false },
+            new object[] { new IPAddress[] { IPAddress.Loopback }, IPAddress.IPv6Any, true },
+            new object[] { new IPAddress[] { IPAddress.Loopback, IPAddress.IPv6Loopback }, IPAddress.Loopback, false },
+            new object[] { new IPAddress[] { IPAddress.IPv6Loopback, IPAddress.Loopback }, IPAddress.Loopback, false },
+            new object[] { new IPAddress[] { IPAddress.Loopback, IPAddress.IPv6Loopback }, IPAddress.IPv6Loopback, false },
+            new object[] { new IPAddress[] { IPAddress.IPv6Loopback, IPAddress.Loopback }, IPAddress.IPv6Loopback, false },
+            new object[] { new IPAddress[] { IPAddress.Loopback, IPAddress.IPv6Loopback }, IPAddress.IPv6Any, true },
+            new object[] { new IPAddress[] { IPAddress.IPv6Loopback, IPAddress.Loopback }, IPAddress.IPv6Any, true }
+        };
+
         private class SocketServer : IDisposable
         {
             private readonly ITestOutputHelper _log;
             private TcpListener _server;
+            private Socket _acceptedSocket;
 
             public SocketServer(ITestOutputHelper log, IPAddress address, bool dualMode, out int port)
             {
@@ -2515,8 +2409,8 @@ namespace System.Net.Sockets.Tests
             {
                 try
                 {
-                    Socket socket = _server.EndAcceptSocket(ar);
-                    _log.WriteLine("Accepted Socket: " + socket.RemoteEndPoint);
+                    _acceptedSocket = _server.EndAcceptSocket(ar);
+                    _log.WriteLine("Accepted Socket: " + _acceptedSocket.RemoteEndPoint);
                 }
                 catch (SocketException) { }
                 catch (ObjectDisposedException) { }
@@ -2527,6 +2421,8 @@ namespace System.Net.Sockets.Tests
                 try
                 {
                     _server.Stop();
+                    if (_acceptedSocket != null)
+                        _acceptedSocket.Dispose();
                 }
                 catch (Exception) { }
             }
@@ -2601,18 +2497,14 @@ namespace System.Net.Sockets.Tests
 
                 port = _server.BindToAnonymousPort(address);
 
-                IPAddress remoteAddress = address.AddressFamily == AddressFamily.InterNetwork ? IPAddress.Any : IPAddress.IPv6Any;
-                EndPoint remote = new IPEndPoint(remoteAddress, 0);
-                _server.BeginReceiveFrom(new byte[1], 0, 1, SocketFlags.None, ref remote, Received, null);
+                _server.BeginReceive(new byte[1], 0, 1, SocketFlags.None, Received, null);
             }
 
             private void Received(IAsyncResult ar)
             {
                 try
                 {
-                    IPAddress remoteAddress = _server.AddressFamily == AddressFamily.InterNetwork ? IPAddress.Any : IPAddress.IPv6Any;
-                    EndPoint remote = new IPEndPoint(remoteAddress, 0);
-                    int byteCount = _server.EndReceiveFrom(ar, ref remote);
+                    int byteCount = _server.EndReceive(ar);
                 }
                 catch (SocketException) { }
                 catch (ObjectDisposedException) { }

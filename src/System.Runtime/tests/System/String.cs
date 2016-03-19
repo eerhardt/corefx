@@ -1,5 +1,6 @@
-// Copyright (c) Microsoft. All rights reserved.
-// Licensed under the MIT license. See LICENSE file in the project root for full license information.
+// Licensed to the .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
+// See the LICENSE file in the project root for more information.
 
 using System;
 using System.Collections;
@@ -634,7 +635,7 @@ public static unsafe class StringTests
     }
 
     [Theory]
-    [MemberData("AllSubstringsAndComparisons", new object[] { "abcde" })]
+    [MemberData(nameof(AllSubstringsAndComparisons), new object[] { "abcde" })]
     public static void TestIndexOf_AllSubstrings(string source, string substring, int i, StringComparison comparison)
     {
         bool ignoringCase =
@@ -977,7 +978,7 @@ public static unsafe class StringTests
     [Theory]
     [InlineData(null, true)]
     [InlineData("", true)]
-    [MemberData("StringsWithWhitespace")]
+    [MemberData(nameof(StringsWithWhitespace))]
     public static void TestIsNullOrWhitespace(string value, bool expected)
     {
         bool b = String.IsNullOrWhiteSpace(value);
@@ -1103,7 +1104,7 @@ public static unsafe class StringTests
     }
 
     [Theory]
-    [MemberData("AllSubstringsAndComparisons", new object[] { "abcde" })]
+    [MemberData(nameof(AllSubstringsAndComparisons), new object[] { "abcde" })]
     public static void TestLastIndexOf_AllSubstrings(string source, string substring, int i, StringComparison comparison)
     {
         bool ignoringCase =

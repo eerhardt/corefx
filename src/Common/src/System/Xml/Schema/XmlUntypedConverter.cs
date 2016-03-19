@@ -1,5 +1,6 @@
-// Copyright (c) Microsoft. All rights reserved.
-// Licensed under the MIT license. See LICENSE file in the project root for full license information.
+// Licensed to the .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
+// See the LICENSE file in the project root for more information.
 
 namespace System.Xml.Schema
 {
@@ -138,7 +139,7 @@ namespace System.Xml.Schema
     {
         public static bool ToBoolean(string value)
         {
-            if (value == null) throw new ArgumentNullException("value");
+            if (value == null) throw new ArgumentNullException(nameof(value));
 
             return XmlConvert.ToBoolean((string)value);
         }
@@ -150,28 +151,28 @@ namespace System.Xml.Schema
 
         public static DateTime ToDateTime(string value)
         {
-            if (value == null) throw new ArgumentNullException("value");
+            if (value == null) throw new ArgumentNullException(nameof(value));
 
             return UntypedAtomicToDateTime((string)value);
         }
 
         public static double ToDouble(string value)
         {
-            if (value == null) throw new ArgumentNullException("value");
+            if (value == null) throw new ArgumentNullException(nameof(value));
 
             return XmlConvert.ToDouble((string)value);
         }
 
         public static int ToInt32(string value)
         {
-            if (value == null) throw new ArgumentNullException("value");
+            if (value == null) throw new ArgumentNullException(nameof(value));
 
             return XmlConvert.ToInt32((string)value);
         }
 
         public static long ToInt64(string value)
         {
-            if (value == null) throw new ArgumentNullException("value");
+            if (value == null) throw new ArgumentNullException(nameof(value));
 
             return XmlConvert.ToInt64((string)value);
         }
@@ -232,7 +233,7 @@ namespace System.Xml.Schema
 
         public static string ToString(object value, IXmlNamespaceResolver nsResolver)
         {
-            if (value == null) throw new ArgumentNullException("value");
+            if (value == null) throw new ArgumentNullException(nameof(value));
 
             Type sourceType = value.GetType();
 
@@ -350,8 +351,8 @@ namespace System.Xml.Schema
 
         public static object ChangeType(string value, Type destinationType, IXmlNamespaceResolver nsResolver)
         {
-            if (value == null) throw new ArgumentNullException("value");
-            if (destinationType == null) throw new ArgumentNullException("destinationType");
+            if (value == null) throw new ArgumentNullException(nameof(value));
+            if (destinationType == null) throw new ArgumentNullException(nameof(destinationType));
 
             if (destinationType == BooleanType) return XmlConvert.ToBoolean((string)value);
             if (destinationType == ByteType) return Int32ToByte(XmlConvert.ToInt32((string)value));

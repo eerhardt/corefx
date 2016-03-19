@@ -1,5 +1,6 @@
-// Copyright (c) Microsoft. All rights reserved.
-// Licensed under the MIT license. See LICENSE file in the project root for full license information.
+// Licensed to the .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
+// See the LICENSE file in the project root for more information.
 
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 //------------------------------------------------------------------------------
@@ -595,9 +596,9 @@ namespace System.Data.SqlTypes
         {
             CheckValidPrecScale(bPrecision, bScale);
             if (bits == null)
-                throw new ArgumentNullException("bits");
+                throw new ArgumentNullException(nameof(bits));
             else if (bits.Length != 4)
-                throw new ArgumentException(SQLResource.InvalidArraySizeMessage, "bits");
+                throw new ArgumentException(SQLResource.InvalidArraySizeMessage, nameof(bits));
 
             m_bPrec = bPrecision;
             m_bScale = bScale;
@@ -1033,7 +1034,7 @@ namespace System.Data.SqlTypes
         public static SqlDecimal Parse(String s)
         {
             if (s == null)
-                throw new ArgumentNullException("s");
+                throw new ArgumentNullException(nameof(s));
 
             if (s == SQLResource.NullString)
                 return SqlDecimal.Null;

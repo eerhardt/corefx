@@ -1,5 +1,6 @@
-// Copyright (c) Microsoft. All rights reserved.
-// Licensed under the MIT license. See LICENSE file in the project root for full license information.
+// Licensed to the .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
+// See the LICENSE file in the project root for more information.
 
 using System;
 
@@ -128,28 +129,6 @@ namespace System.Linq.Expressions
             get
             {
                 return SR.TypeDoesNotHaveConstructorForTheSignature;
-            }
-        }
-
-        /// <summary>
-        /// A string like "Count must be non-negative."
-        /// </summary>
-        internal static string CountCannotBeNegative
-        {
-            get
-            {
-                return SR.CountCannotBeNegative;
-            }
-        }
-
-        /// <summary>
-        /// A string like "arrayType must be an array type"
-        /// </summary>
-        internal static string ArrayTypeMustBeArray
-        {
-            get
-            {
-                return SR.ArrayTypeMustBeArray;
             }
         }
 
@@ -1160,17 +1139,6 @@ namespace System.Linq.Expressions
         internal static string OutOfRange(object p0, object p1)
         {
             return SR.Format(SR.OutOfRange, p0, p1);
-        }
-
-        /// <summary>
-        /// A string like "Queue empty."
-        /// </summary>
-        internal static string QueueEmpty
-        {
-            get
-            {
-                return SR.QueueEmpty;
-            }
         }
 
         /// <summary>

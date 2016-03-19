@@ -1,5 +1,6 @@
-// Copyright (c) Microsoft. All rights reserved.
-// Licensed under the MIT license. See LICENSE file in the project root for full license information.
+// Licensed to the .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
+// See the LICENSE file in the project root for more information.
 
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
@@ -10,9 +11,9 @@ namespace System.Net.Http
     internal static class WinHttpTraceHelper
     {
         private const string WinHtpTraceEnvironmentVariable = "WINHTTPHANDLER_TRACE";
-        private static bool s_TraceEnabled;
+        private static readonly bool s_traceEnabled = IsTraceEnabledViaEnvironmentVariable();
 
-        static WinHttpTraceHelper()
+        private static bool IsTraceEnabledViaEnvironmentVariable()
         {
             string env;
             try
@@ -24,13 +25,13 @@ namespace System.Net.Http
                 env = null;
             }
 
-            s_TraceEnabled = !string.IsNullOrEmpty(env);
+            return !string.IsNullOrEmpty(env);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool IsTraceEnabled()
         {
-            return s_TraceEnabled;
+            return s_traceEnabled;
         }
 
         public static void Trace(string message)
@@ -43,7 +44,7 @@ namespace System.Net.Http
             Debug.WriteLine(message);
         }
 
-        public static void Trace(string format, object arg0)
+        public static void Trace(string format, bool arg0)
         {
             if (!IsTraceEnabled())
             {
@@ -53,7 +54,37 @@ namespace System.Net.Http
             Debug.WriteLine(format, arg0);
         }
 
-        public static void Trace(string format, object arg0, object arg1, object arg2)
+        public static void Trace(string format, int arg0)
+        {
+            if (!IsTraceEnabled())
+            {
+                return;
+            }
+            
+            Debug.WriteLine(format, arg0);
+        }
+
+        public static void Trace(string format, string arg0)
+        {
+            if (!IsTraceEnabled())
+            {
+                return;
+            }
+            
+            Debug.WriteLine(format, arg0);
+        }
+
+        public static void Trace(string format, string arg0, string arg1)
+        {
+            if (!IsTraceEnabled())
+            {
+                return;
+            }
+            
+            Debug.WriteLine(format, arg0, arg1);
+        }
+
+        public static void Trace(string format, IntPtr arg0, bool arg1, bool arg2)
         {
             if (!IsTraceEnabled())
             {
@@ -61,6 +92,16 @@ namespace System.Net.Http
             }
             
             Debug.WriteLine(format, arg0, arg1, arg2);
+        }
+
+        public static void Trace(string format, string arg0, bool arg1, string arg2, string arg3)
+        {
+            if (!IsTraceEnabled())
+            {
+                return;
+            }
+            
+            Debug.WriteLine(format, arg0, arg1, arg2, arg3);
         }
 
         public static void TraceCallbackStatus(string message, IntPtr handle, IntPtr context, uint status)

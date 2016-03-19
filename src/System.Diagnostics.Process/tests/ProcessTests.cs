@@ -1,5 +1,6 @@
-// Copyright (c) Microsoft. All rights reserved.
-// Licensed under the MIT license. See LICENSE file in the project root for full license information.
+// Licensed to the .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
+// See the LICENSE file in the project root for more information.
 
 using System.Collections.Generic;
 using System.Linq;
@@ -11,6 +12,26 @@ namespace System.Diagnostics.Tests
 {
     public class ProcessTests : ProcessTestBase
     {
+        private class FinalizingProcess : Process
+        {
+            public static volatile bool WasFinalized;
+
+            public static void CreateAndRelease()
+            {
+                new FinalizingProcess();
+            }
+
+            protected override void Dispose(bool disposing)
+            {
+                if (!disposing)
+                {
+                    WasFinalized = true;
+                }
+
+                base.Dispose(disposing);
+            }
+        }
+
         private void SetAndCheckBasePriority(ProcessPriorityClass exPriorityClass, int priority)
         {
             _process.PriorityClass = exPriorityClass;
@@ -192,7 +213,8 @@ namespace System.Diagnostics.Tests
             Assert.NotNull(_process.MachineName);
         }
 
-        [Fact, PlatformSpecific(~PlatformID.OSX)]
+        [ActiveIssue(6677, PlatformID.OSX)]
+        [Fact]
         public void TestMainModuleOnNonOSX()
         {
             string fileName = "corerun";
@@ -276,6 +298,7 @@ namespace System.Diagnostics.Tests
             }
         }
 
+        [ActiveIssue(6677, PlatformID.OSX)]
         [Fact]
         public void TestModules()
         {
@@ -342,10 +365,16 @@ namespace System.Diagnostics.Tests
             Assert.True(_process.VirtualMemorySize64 > 0);
         }
 
-        [ActiveIssue(3281, PlatformID.OSX)]
         [Fact]
         public void TestWorkingSet64()
         {
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+            {
+                // resident memory can be 0 on OSX.
+                Assert.True(_process.WorkingSet64 >= 0);
+                return;
+            }
+
             Assert.True(_process.WorkingSet64 > 0);
         }
 
@@ -369,10 +398,11 @@ namespace System.Diagnostics.Tests
             Assert.InRange(processorTimeAtHalfSpin, processorTimeBeforeSpin, Process.GetCurrentProcess().TotalProcessorTime.TotalSeconds);
         }
 
-        [Fact, ActiveIssue(3037)]
+        [ActiveIssue(5805)]
+        [Fact]
         public void TestProcessStartTime()
         {
-            DateTime timeBeforeCreatingProcess = DateTime.UtcNow;
+            DateTime systemBootTime = DateTime.UtcNow - TimeSpan.FromMilliseconds(Environment.TickCount);
             Process p = CreateProcessLong();
 
             Assert.Throws<InvalidOperationException>(() => p.StartTime);
@@ -386,7 +416,7 @@ namespace System.Diagnostics.Tests
                 // On Windows, timer resolution is 15 ms from MSDN DateTime.Now. Hence, allowing error in 15ms [max(10,15)].
 
                 long intervalTicks = new TimeSpan(0, 0, 0, 0, 15).Ticks;
-                long beforeTicks = timeBeforeCreatingProcess.Ticks - intervalTicks;
+                long beforeTicks = systemBootTime.Ticks;
 
                 try
                 {
@@ -574,7 +604,7 @@ namespace System.Diagnostics.Tests
         }
 
         [Theory, PlatformSpecific(PlatformID.Windows)]
-        [MemberData("GetTestProcess")]
+        [MemberData(nameof(GetTestProcess))]
         public void TestProcessOnRemoteMachineWindows(Process currentProcess, Process remoteProcess)
         {
             Assert.Equal(currentProcess.Id, remoteProcess.Id);
@@ -649,8 +679,7 @@ namespace System.Diagnostics.Tests
         {
             using (var handle = RemoteInvokeRaw((Func<string, string, string, int>)ConcatThreeArguments,
                 inputArguments,
-                start: true,
-                psi: new ProcessStartInfo { RedirectStandardOutput = true }))
+                new RemoteInvokeOptions { Start = true, StartInfo = new ProcessStartInfo { RedirectStandardOutput = true } }))
             {
                 Assert.Equal(expectedArgv, handle.Process.StandardOutput.ReadToEnd());
             }
@@ -670,6 +699,15 @@ namespace System.Diagnostics.Tests
                 Console.WriteLine("{0} : \"{1}\" (Threads: {2})", p.Id, p.ProcessName, p.Threads.Count);
                 p.Dispose();
             }
+        }
+
+        [Fact]
+        public void CanBeFinalized()
+        {
+            FinalizingProcess.CreateAndRelease();
+            GC.Collect();
+            GC.WaitForPendingFinalizers();
+            Assert.True(FinalizingProcess.WasFinalized);
         }
     }
 }

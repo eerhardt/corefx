@@ -1,5 +1,6 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
-// Licensed under the MIT license. See LICENSE file in the project root for full license information.
+// Licensed to the .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
+// See the LICENSE file in the project root for more information.
 
 using System.Net.Test.Common;
 
@@ -72,8 +73,6 @@ namespace System.Net.Sockets.Tests
             v6Client.ConnectAsync(IPAddress.IPv6Loopback, port).GetAwaiter().GetResult();
 
             TcpClient acceptedV6Client = listener.EndAcceptTcpClient(asyncResult);
-            Assert.Equal(AddressFamily.InterNetworkV6, acceptedV6Client.Client.RemoteEndPoint.AddressFamily);
-            Assert.Equal(AddressFamily.InterNetworkV6, v6Client.Client.RemoteEndPoint.AddressFamily);
 
             asyncResult = listener.BeginAcceptTcpClient(null, null);
 
@@ -81,8 +80,6 @@ namespace System.Net.Sockets.Tests
             v4Client.ConnectAsync(IPAddress.Loopback, port).GetAwaiter().GetResult();
 
             TcpClient acceptedV4Client = listener.EndAcceptTcpClient(asyncResult);
-            Assert.Equal(AddressFamily.InterNetworkV6, acceptedV4Client.Client.RemoteEndPoint.AddressFamily);
-            Assert.Equal(AddressFamily.InterNetwork, v4Client.Client.RemoteEndPoint.AddressFamily);
 
             v6Client.Dispose();
             acceptedV6Client.Dispose();

@@ -1,7 +1,6 @@
-// Copyright (c) Microsoft. All rights reserved.
-// Licensed under the MIT license. See LICENSE file in the project root for full license information.
-//------------------------------------------------------------
-//------------------------------------------------------------
+// Licensed to the .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
+// See the LICENSE file in the project root for more information.
 
 using System.Runtime.Serialization;
 using System.Diagnostics;
@@ -668,6 +667,7 @@ namespace System.Xml
             int byteCount = _length;
             bool insufficientSpaceInCharsArray = false;
 
+            var encoding = new UTF8Encoding(encoderShouldEmitUTF8Identifier: false, throwOnInvalidBytes: true);
             while (true)
             {
                 while (charCount > 0 && byteCount > 0)
@@ -689,7 +689,6 @@ namespace System.Xml
                 int actualByteCount;
                 int actualCharCount;
 
-                UTF8Encoding encoding = new UTF8Encoding(false, true);
                 try
                 {
                     // If we're asking for more than are possibly available, or more than are truly available then we can return the entire thing

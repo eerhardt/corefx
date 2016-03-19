@@ -1,5 +1,6 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
-// Licensed under the MIT license. See LICENSE file in the project root for full license information.
+// Licensed to the .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
+// See the LICENSE file in the project root for more information.
 
 using System.Net.Test.Common;
 using System.Threading;
@@ -34,7 +35,8 @@ namespace System.Net.Sockets.Tests
             int port;
             SocketTestServer server = SocketTestServer.SocketTestServerFactory(IPAddress.Loopback, out port);
 
-            SocketTestServer server6 = SocketTestServer.SocketTestServerFactory(new IPEndPoint(IPAddress.IPv6Loopback, port));
+            int port6;
+            SocketTestServer server6 = SocketTestServer.SocketTestServerFactory(IPAddress.IPv6Loopback, out port6);
 
             Socket sock = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
 
@@ -54,7 +56,7 @@ namespace System.Net.Sockets.Tests
                 sock.Dispose();
 
                 sock = new Socket(AddressFamily.InterNetworkV6, SocketType.Stream, ProtocolType.Tcp);
-                args.RemoteEndPoint = new IPEndPoint(IPAddress.IPv6Loopback, port);
+                args.RemoteEndPoint = new IPEndPoint(IPAddress.IPv6Loopback, port6);
                 complete.Reset();
 
                 Assert.True(sock.ConnectAsync(args));

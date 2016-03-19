@@ -1,5 +1,6 @@
-// Copyright (c) Microsoft. All rights reserved.
-// Licensed under the MIT license. See LICENSE file in the project root for full license information.
+// Licensed to the .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
+// See the LICENSE file in the project root for more information.
 
 using Microsoft.Win32.SafeHandles;
 using System.Diagnostics;
@@ -45,6 +46,7 @@ namespace System.IO.MemoryMappedFiles
             }
             else // handle.IsInvalid
             {
+                handle.Dispose();
                 throw Win32Marshal.GetExceptionForWin32Error(errorCode);
             }
 
@@ -116,6 +118,7 @@ namespace System.IO.MemoryMappedFiles
                 }
                 else
                 {
+                    handle.Dispose();
                     int createErrorCode = Marshal.GetLastWin32Error();
                     if (createErrorCode != Interop.mincore.Errors.ERROR_ACCESS_DENIED)
                     {
@@ -135,6 +138,7 @@ namespace System.IO.MemoryMappedFiles
                 // didn't get valid handle; have to retry
                 else
                 {
+                    handle.Dispose();
                     int openErrorCode = Marshal.GetLastWin32Error();
                     if (openErrorCode != Interop.mincore.Errors.ERROR_FILE_NOT_FOUND)
                     {
@@ -230,6 +234,7 @@ namespace System.IO.MemoryMappedFiles
 
             if (handle.IsInvalid)
             {
+                handle.Dispose();
                 if (createOrOpen && (lastError == Interop.mincore.Errors.ERROR_FILE_NOT_FOUND))
                 {
                     throw new ArgumentException(SR.Argument_NewMMFWriteAccessNotAllowed, "access");
@@ -253,8 +258,8 @@ namespace System.IO.MemoryMappedFiles
             if ((inheritability & HandleInheritability.Inheritable) != 0)
             {
                 secAttrs = new Interop.mincore.SECURITY_ATTRIBUTES();
-                secAttrs.nLength = (uint)Marshal.SizeOf(secAttrs);
-                secAttrs.bInheritHandle = true;
+                secAttrs.nLength = (uint)sizeof(Interop.mincore.SECURITY_ATTRIBUTES);
+                secAttrs.bInheritHandle = Interop.BOOL.TRUE;
             }
             return secAttrs;
         }

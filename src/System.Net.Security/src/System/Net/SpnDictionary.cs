@@ -1,5 +1,6 @@
-// Copyright (c) Microsoft. All rights reserved.
-// Licensed under the MIT license. See LICENSE file in the project root for full license information.
+// Licensed to the .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
+// See the LICENSE file in the project root for more information.
 
 using System.Collections;
 using System.Collections.Specialized;
@@ -190,7 +191,7 @@ namespace System.Net
         {
             if (key == null)
             {
-                throw new ArgumentNullException("key");
+                throw new ArgumentNullException(nameof(key));
             }
 
             try
@@ -200,7 +201,7 @@ namespace System.Net
             }
             catch (UriFormatException e)
             {
-                throw new ArgumentException(SR.Format(SR.net_mustbeuri, "key"), "key", e);
+                throw new ArgumentException(SR.Format(SR.net_mustbeuri, "key"), nameof(key), e);
             }
 
             return key;
@@ -211,7 +212,7 @@ namespace System.Net
             // Copied from HashTable.CopyTo
             if (array == null)
             {
-                throw new ArgumentNullException("array");
+                throw new ArgumentNullException(nameof(array));
             }
 
             if (array.Rank != 1)
@@ -221,7 +222,7 @@ namespace System.Net
 
             if (index < 0)
             {
-                throw new ArgumentOutOfRangeException("index", SR.ArgumentOutOfRange_NeedNonNegNum);
+                throw new ArgumentOutOfRangeException(nameof(index), SR.ArgumentOutOfRange_NeedNonNegNum);
             }
 
             if ((array.Length - index) < count)

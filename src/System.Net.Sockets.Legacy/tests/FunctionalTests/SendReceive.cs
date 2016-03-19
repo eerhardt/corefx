@@ -1,5 +1,6 @@
-// Copyright (c) Microsoft. All rights reserved.
-// Licensed under the MIT license. See LICENSE file in the project root for full license information.
+// Licensed to the .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
+// See the LICENSE file in the project root for more information.
 
 using System.Collections.Generic;
 using System.Threading;
@@ -121,38 +122,46 @@ namespace System.Net.Sockets.Tests
             Action<int, EndPoint> receiveHandler = null;
             receiveHandler = (received, remote) =>
             {
-                if (receivedDatagrams != -1)
+                try
                 {
-                    Assert.Equal(DatagramSize, received);
-                    Assert.Equal(rightEndpoint, remote);
-
-                    int datagramId = (int)receiveBuffer[0];
-                    Assert.Null(receivedChecksums[datagramId]);
-                    receivedChecksums[datagramId] = Fletcher32.Checksum(receiveBuffer, 0, received);
-
-                    receiverAck.Set();
-                    Assert.True(senderAck.Wait(AckTimeout));
-                    senderAck.Reset();
-
-                    receivedDatagrams++;
-                    if (receivedDatagrams == DatagramsToSend)
+                    if (receivedDatagrams != -1)
                     {
-                        left.Dispose();
-                        receiverFinished.SetResult(true);
-                        return;
-                    }
-                }
-                else
-                {
-                    receivedDatagrams = 0;
-                }
+                        Assert.Equal(DatagramSize, received);
+                        Assert.Equal(rightEndpoint, remote);
 
-                left.ReceiveFromAPM(receiveBuffer, 0, receiveBuffer.Length, SocketFlags.None, receiveRemote, receiveHandler);
+                        int datagramId = (int)receiveBuffer[0];
+                        Assert.Null(receivedChecksums[datagramId]);
+                        receivedChecksums[datagramId] = Fletcher32.Checksum(receiveBuffer, 0, received);
+
+                        receiverAck.Set();
+                        Assert.True(senderAck.Wait(AckTimeout));
+                        senderAck.Reset();
+
+                        receivedDatagrams++;
+                        if (receivedDatagrams == DatagramsToSend)
+                        {
+                            left.Dispose();
+                            receiverFinished.SetResult(true);
+                            return;
+                        }
+                    }
+                    else
+                    {
+                        receivedDatagrams = 0;
+                    }
+
+                    left.ReceiveFromAPM(receiveBuffer, 0, receiveBuffer.Length, SocketFlags.None, receiveRemote, receiveHandler);
+                }
+                catch (Exception ex)
+                {
+                    receiverFinished.SetException(ex);
+                }
             };
 
             receiveHandler(0, null);
 
             var random = new Random();
+            var senderFinished = new TaskCompletionSource<bool>();
             var sentChecksums = new uint[DatagramsToSend];
             var sendBuffer = new byte[DatagramSize];
             int sentDatagrams = -1;
@@ -160,35 +169,45 @@ namespace System.Net.Sockets.Tests
             Action<int> sendHandler = null;
             sendHandler = sent =>
             {
-                if (sentDatagrams != -1)
+                try
                 {
-                    Assert.True(receiverAck.Wait(AckTimeout));
-                    receiverAck.Reset();
-                    senderAck.Set();
-
-                    Assert.Equal(DatagramSize, sent);
-                    sentChecksums[sentDatagrams] = Fletcher32.Checksum(sendBuffer, 0, sent);
-
-                    sentDatagrams++;
-                    if (sentDatagrams == DatagramsToSend)
+                    if (sentDatagrams != -1)
                     {
-                        right.Dispose();
-                        return;
-                    }
-                }
-                else
-                {
-                    sentDatagrams = 0;
-                }
+                        Assert.True(receiverAck.Wait(AckTimeout));
+                        receiverAck.Reset();
+                        senderAck.Set();
 
-                random.NextBytes(sendBuffer);
-                sendBuffer[0] = (byte)sentDatagrams;
-                right.SendToAPM(sendBuffer, 0, sendBuffer.Length, SocketFlags.None, leftEndpoint, sendHandler);
+                        Assert.Equal(DatagramSize, sent);
+                        sentChecksums[sentDatagrams] = Fletcher32.Checksum(sendBuffer, 0, sent);
+
+                        sentDatagrams++;
+                        if (sentDatagrams == DatagramsToSend)
+                        {
+                            right.Dispose();
+                            senderFinished.SetResult(true);
+                            return;
+                        }
+                    }
+                    else
+                    {
+                        sentDatagrams = 0;
+                    }
+
+                    random.NextBytes(sendBuffer);
+                    sendBuffer[0] = (byte)sentDatagrams;
+                    right.SendToAPM(sendBuffer, 0, sendBuffer.Length, SocketFlags.None, leftEndpoint, sendHandler);
+                }
+                catch (Exception ex)
+                {
+                    senderFinished.SetException(ex);
+                }
             };
 
             sendHandler(0);
 
             Assert.True(receiverFinished.Task.Wait(TestTimeout));
+            Assert.True(senderFinished.Task.Wait(TestTimeout));
+
             for (int i = 0; i < DatagramsToSend; i++)
             {
                 Assert.NotNull(receivedChecksums[i]);
@@ -284,7 +303,6 @@ namespace System.Net.Sockets.Tests
                         random.NextBytes(sendBuffer);
 
                         sent = client.Send(sendBuffer, 0, Math.Min(sendBuffer.Length, remaining), SocketFlags.None);
-                        Assert.NotEqual(0, sent);
                         bytesSent += sent;
                         sentChecksum.Add(sendBuffer, 0, sent);
                     }
@@ -306,10 +324,6 @@ namespace System.Net.Sockets.Tests
                         }
 
                         sent = client.Send(sendBuffers, SocketFlags.None);
-                        if (sent == 0)
-                        {
-                            break;
-                        }
 
                         bytesSent += sent;
                         for (int i = 0, remaining = sent; i < sendBuffers.Count && remaining > 0; i++)
@@ -325,7 +339,7 @@ namespace System.Net.Sockets.Tests
                 client.LingerState = new LingerOption(true, LingerTime);
             }
 
-            Assert.True(serverThread.Join(TestTimeout));
+            Assert.True(serverThread.Join(TestTimeout), "Completed within allowed time");
 
             Assert.Equal(bytesSent, bytesReceived);
             Assert.Equal(sentChecksum.Sum, receivedChecksum.Sum);
@@ -444,7 +458,7 @@ namespace System.Net.Sockets.Tests
                             sentChecksum.Add(sendBuffer, 0, sent);
 
                             remaining -= sent;
-                            if (remaining <= 0 || sent == 0)
+                            if (remaining <= 0)
                             {
                                 client.LingerState = new LingerOption(true, LingerTime);
                                 client.Dispose();
@@ -483,7 +497,7 @@ namespace System.Net.Sockets.Tests
                             }
 
                             remaining -= sent;
-                            if (remaining <= 0 || sent == 0)
+                            if (remaining <= 0)
                             {
                                 client.LingerState = new LingerOption(true, LingerTime);
                                 client.Dispose();
@@ -506,7 +520,7 @@ namespace System.Net.Sockets.Tests
                 sendHandler(0);
             });
 
-            Assert.True(serverFinished.Task.Wait(TestTimeout));
+            Assert.True(serverFinished.Task.Wait(TestTimeout), "Completed within allowed time");
 
             Assert.Equal(bytesSent, bytesReceived);
             Assert.Equal(sentChecksum.Sum, receivedChecksum.Sum);

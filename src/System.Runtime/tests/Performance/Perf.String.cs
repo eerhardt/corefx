@@ -1,5 +1,6 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
-// Licensed under the MIT license. See LICENSE file in the project root for full license information.
+// Licensed to the .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
+// See the LICENSE file in the project root for more information.
 
 using System.Text;
 using System.Collections.Generic;
@@ -18,7 +19,7 @@ namespace System.Runtime.Tests
         }
 
         [Benchmark]
-        [MemberData("TestStringSizes")]
+        [MemberData(nameof(TestStringSizes))]
         public void GetChars(int size)
         {
             PerfUtils utils = new PerfUtils();
@@ -34,7 +35,7 @@ namespace System.Runtime.Tests
         }
 
         [Benchmark]
-        [MemberData("TestStringSizes")]
+        [MemberData(nameof(TestStringSizes))]
         public void Concat_str_str(int size)
         {
             PerfUtils utils = new PerfUtils();
@@ -47,7 +48,7 @@ namespace System.Runtime.Tests
         }
 
         [Benchmark]
-        [MemberData("TestStringSizes")]
+        [MemberData(nameof(TestStringSizes))]
         public void Concat_str_str_str(int size)
         {
             PerfUtils utils = new PerfUtils();
@@ -61,7 +62,7 @@ namespace System.Runtime.Tests
         }
 
         [Benchmark]
-        [MemberData("TestStringSizes")]
+        [MemberData(nameof(TestStringSizes))]
         public void Concat_str_str_str_str(int size)
         {
             PerfUtils utils = new PerfUtils();
@@ -76,7 +77,7 @@ namespace System.Runtime.Tests
         }
 
         [Benchmark]
-        [MemberData("TestStringSizes")]
+        [MemberData(nameof(TestStringSizes))]
         public void Contains(int size)
         {
             PerfUtils utils = new PerfUtils();
@@ -89,7 +90,7 @@ namespace System.Runtime.Tests
         }
 
         [Benchmark]
-        [MemberData("TestStringSizes")]
+        [MemberData(nameof(TestStringSizes))]
         public void Equals(int size)
         {
             PerfUtils utils = new PerfUtils();
@@ -129,7 +130,7 @@ namespace System.Runtime.Tests
         }
 
         [Benchmark]
-        [MemberData("TestStringSizes")]
+        [MemberData(nameof(TestStringSizes))]
         public void GetLength(int size)
         {
             PerfUtils utils = new PerfUtils();
@@ -146,7 +147,7 @@ namespace System.Runtime.Tests
         }
 
         [Benchmark]
-        [MemberData("TestStringSizes")]
+        [MemberData(nameof(TestStringSizes))]
         public void op_Equality(int size)
         {
             PerfUtils utils = new PerfUtils();
@@ -164,7 +165,7 @@ namespace System.Runtime.Tests
         }
 
         [Benchmark]
-        [MemberData("TestStringSizes")]
+        [MemberData(nameof(TestStringSizes))]
         public void Replace(int size)
         {
             PerfUtils utils = new PerfUtils();
@@ -177,7 +178,7 @@ namespace System.Runtime.Tests
         }
 
         [Benchmark]
-        [MemberData("TestStringSizes")]
+        [MemberData(nameof(TestStringSizes))]
         public void Split(int size)
         {
             PerfUtils utils = new PerfUtils();
@@ -190,7 +191,7 @@ namespace System.Runtime.Tests
         }
 
         [Benchmark]
-        [MemberData("TestStringSizes")]
+        [MemberData(nameof(TestStringSizes))]
         public void StartsWith(int size)
         {
             PerfUtils utils = new PerfUtils();
@@ -203,7 +204,7 @@ namespace System.Runtime.Tests
         }
 
         [Benchmark]
-        [MemberData("TestStringSizes")]
+        [MemberData(nameof(TestStringSizes))]
         public void Substring_int(int size)
         {
             PerfUtils utils = new PerfUtils();
@@ -216,7 +217,7 @@ namespace System.Runtime.Tests
         }
 
         [Benchmark]
-        [MemberData("TestStringSizes")]
+        [MemberData(nameof(TestStringSizes))]
         public void Substring_int_int(int size)
         {
             PerfUtils utils = new PerfUtils();
@@ -230,7 +231,7 @@ namespace System.Runtime.Tests
         }
 
         [Benchmark]
-        [MemberData("TestStringSizes")]
+        [MemberData(nameof(TestStringSizes))]
         public void ToLower(int size)
         {
             PerfUtils utils = new PerfUtils();
@@ -242,7 +243,7 @@ namespace System.Runtime.Tests
         }
 
         [Benchmark]
-        [MemberData("TestStringSizes")]
+        [MemberData(nameof(TestStringSizes))]
         public void ToUpper(int size)
         {
             PerfUtils utils = new PerfUtils();
@@ -254,7 +255,7 @@ namespace System.Runtime.Tests
         }
 
         [Benchmark]
-        [MemberData("TestStringSizes")]
+        [MemberData(nameof(TestStringSizes))]
         public void Trim_WithWhitespace(int size)
         {
             PerfUtils utils = new PerfUtils();
@@ -266,7 +267,7 @@ namespace System.Runtime.Tests
         }
 
         [Benchmark]
-        [MemberData("TestStringSizes")]
+        [MemberData(nameof(TestStringSizes))]
         public void Trim_NothingToDo(int size)
         {
             PerfUtils utils = new PerfUtils();

@@ -1,5 +1,6 @@
-// Copyright (c) Microsoft. All rights reserved.
-// Licensed under the MIT license. See LICENSE file in the project root for full license information.
+// Licensed to the .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
+// See the LICENSE file in the project root for more information.
 
 using System.Diagnostics;
 using System.Diagnostics.Contracts;
@@ -46,7 +47,7 @@ namespace System.Net.Http.Headers
         {
             if (string.IsNullOrEmpty(tag))
             {
-                throw new ArgumentException(SR.net_http_argument_empty_string, "tag");
+                throw new ArgumentException(SR.net_http_argument_empty_string, nameof(tag));
             }
             int length = 0;
             if ((HttpRuleParser.GetQuotedStringLength(tag, 0, out length) != HttpParseResult.Parsed) ||

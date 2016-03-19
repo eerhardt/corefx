@@ -1,5 +1,6 @@
-// Copyright (c) Microsoft. All rights reserved.
-// Licensed under the MIT license. See LICENSE file in the project root for full license information.
+// Licensed to the .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
+// See the LICENSE file in the project root for more information.
 
 
 
@@ -26,7 +27,7 @@ namespace System.Data.ProviderBase
 
         // s_pendingOpenNonPooled is an array of tasks used to throttle creation of non-pooled connections to 
         // a maximum of Environment.ProcessorCount at a time.
-        private static int s_pendingOpenNonPooledNext = 0;
+        private static uint s_pendingOpenNonPooledNext = 0;
         private static Task<DbConnectionInternal>[] s_pendingOpenNonPooled = new Task<DbConnectionInternal>[Environment.ProcessorCount];
         private static Task<DbConnectionInternal> s_completedTask;
 
@@ -210,14 +211,18 @@ namespace System.Data.ProviderBase
                                 }
                             }
 
-                            // if didn't find one, pick the next one in round-robbin fashion
+                            // if didn't find one, pick the next one in round-robin fashion
                             if (idx == s_pendingOpenNonPooled.Length)
                             {
-                                idx = s_pendingOpenNonPooledNext++ % s_pendingOpenNonPooled.Length;
+                                idx = (int)(s_pendingOpenNonPooledNext % s_pendingOpenNonPooled.Length);
+                                unchecked
+                                {
+                                    s_pendingOpenNonPooledNext++;
+                                }
                             }
 
                             // now that we have an antecedent task, schedule our work when it is completed.
-                            // If it is a new slot or a compelted task, this continuation will start right away.
+                            // If it is a new slot or a completed task, this continuation will start right away.
                             newTask = s_pendingOpenNonPooled[idx].ContinueWith((_) =>
                             {
                                 var newConnection = CreateNonPooledConnection(owningConnection, poolGroup, userOptions);

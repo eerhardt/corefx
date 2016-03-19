@@ -1,5 +1,6 @@
-// Copyright (c) Microsoft. All rights reserved.
-// Licensed under the MIT license. See LICENSE file in the project root for full license information.
+// Licensed to the .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
+// See the LICENSE file in the project root for more information.
 
 
 
@@ -120,7 +121,7 @@ namespace System.Xml
 
                 if (value < 0 || value > _length)
                 {
-                    throw new ArgumentOutOfRangeException("value");
+                    throw new ArgumentOutOfRangeException(nameof(value));
                 }
                 if (value == 0)
                 {
@@ -187,7 +188,7 @@ namespace System.Xml
                 {
                     return;
                 }
-                throw new ArgumentNullException("value");
+                throw new ArgumentNullException(nameof(value));
             }
             if (count == 0)
             {
@@ -195,11 +196,11 @@ namespace System.Xml
             }
             if (start < 0)
             {
-                throw new ArgumentOutOfRangeException("start");
+                throw new ArgumentOutOfRangeException(nameof(start));
             }
             if (count < 0 || start + count > value.Length)
             {
-                throw new ArgumentOutOfRangeException("count");
+                throw new ArgumentOutOfRangeException(nameof(count));
             }
 
             if (_length + count <= MaxStringBuilderLength)
@@ -246,7 +247,7 @@ namespace System.Xml
                 {
                     return;
                 }
-                throw new ArgumentNullException("value");
+                throw new ArgumentNullException(nameof(value));
             }
             if (count == 0)
             {
@@ -254,11 +255,11 @@ namespace System.Xml
             }
             if (start < 0)
             {
-                throw new ArgumentOutOfRangeException("start");
+                throw new ArgumentOutOfRangeException(nameof(start));
             }
             if (count < 0 || start + count > value.Length)
             {
-                throw new ArgumentOutOfRangeException("count");
+                throw new ArgumentOutOfRangeException(nameof(count));
             }
             if (_length + count <= MaxStringBuilderLength)
             {

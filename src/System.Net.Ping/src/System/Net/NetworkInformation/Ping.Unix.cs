@@ -1,5 +1,6 @@
-// Copyright (c) Microsoft. All rights reserved.
-// Licensed under the MIT license. See LICENSE file in the project root for full license information.
+// Licensed to the .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
+// See the LICENSE file in the project root for more information.
 
 using System.ComponentModel;
 using System.Diagnostics;
@@ -112,7 +113,7 @@ namespace System.Net.NetworkInformation
                     int dataOffset = ipHeaderLength + IcmpHeaderLengthInBytes;
                     // We want to return a buffer with the actual data we sent out, not including the header data.
                     byte[] dataBuffer = new byte[bytesReceived - dataOffset];
-                    Array.Copy(receiveBuffer, dataOffset, dataBuffer, 0, dataBuffer.Length);
+                    Buffer.BlockCopy(receiveBuffer, dataOffset, dataBuffer, 0, dataBuffer.Length);
 
                     IPStatus status = isIpv4
                                         ? IcmpV4MessageConstants.MapV4TypeToIPStatus(type, code)

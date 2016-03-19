@@ -1,5 +1,6 @@
-// Copyright (c) Microsoft. All rights reserved.
-// Licensed under the MIT license. See LICENSE file in the project root for full license information.
+// Licensed to the .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
+// See the LICENSE file in the project root for more information.
 
 using System;
 using System.Globalization;
@@ -97,55 +98,6 @@ namespace System.Globalization.CalendarTests
 
             return expectedFourDigitYear;
         }
-        #endregion
-
-        #region Negative tests
-        //NegTest1: two-digit year is a negative value
-        [Fact]
-        public void Test4()
-        {
-            NegTest1(GregorianCalendarTypes.Arabic);
-            NegTest1(GregorianCalendarTypes.Localized);
-            NegTest1(GregorianCalendarTypes.MiddleEastFrench);
-            NegTest1(GregorianCalendarTypes.TransliteratedEnglish);
-            NegTest1(GregorianCalendarTypes.TransliteratedFrench);
-            NegTest1(GregorianCalendarTypes.USEnglish);
-        }
-
-        // NegTest2: two-digit year is a value greater than maximum two-digit year
-        [Fact]
-        public void Test5()
-        {
-            NegTest2(GregorianCalendarTypes.Arabic);
-            NegTest2(GregorianCalendarTypes.Localized);
-            NegTest2(GregorianCalendarTypes.MiddleEastFrench);
-            NegTest2(GregorianCalendarTypes.TransliteratedEnglish);
-            NegTest2(GregorianCalendarTypes.TransliteratedFrench);
-            NegTest2(GregorianCalendarTypes.USEnglish);
-        }
-
-        private void NegTest1(GregorianCalendarTypes calendarType)
-        {
-            System.Globalization.Calendar myCalendar = new GregorianCalendar(calendarType);
-            int twoDigitYear;
-            twoDigitYear = -1 * _generator.GetInt32(-55);
-            Assert.Throws<ArgumentOutOfRangeException>(() =>
-            {
-                myCalendar.ToFourDigitYear(twoDigitYear);
-            });
-        }
-
-        private void NegTest2(GregorianCalendarTypes calendarType)
-        {
-            System.Globalization.Calendar myCalendar = new GregorianCalendar(calendarType);
-            int twoDigitYear;
-            twoDigitYear = c_MAX_TWO_DIGIT_YEAR + _generator.GetInt32(-55) % (int.MaxValue - c_MAX_TWO_DIGIT_YEAR);
-            Assert.Throws<ArgumentOutOfRangeException>(() =>
-            {
-                myCalendar.ToFourDigitYear(twoDigitYear);
-            });
-        }
-
         #endregion
     }
 }

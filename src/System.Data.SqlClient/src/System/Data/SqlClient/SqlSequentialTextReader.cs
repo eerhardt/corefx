@@ -1,5 +1,6 @@
-// Copyright (c) Microsoft. All rights reserved.
-// Licensed under the MIT license. See LICENSE file in the project root for full license information.
+// Licensed to the .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
+// See the LICENSE file in the project root for more information.
 
 using System.Data.Common;
 using System.Diagnostics;
@@ -370,7 +371,7 @@ namespace System.Data.SqlClient
                     {
                         // Otherwise, copy over the leftover buffer
                         byteBuffer = new byte[byteBufferSize];
-                        Array.Copy(_leftOverBytes, byteBuffer, _leftOverBytes.Length);
+                        Buffer.BlockCopy(_leftOverBytes, 0, byteBuffer, 0, _leftOverBytes.Length);
                         byteBufferUsed = _leftOverBytes.Length;
                     }
                 }
@@ -409,7 +410,7 @@ namespace System.Data.SqlClient
             if ((!completed) && (bytesUsed < inBufferCount))
             {
                 _leftOverBytes = new byte[inBufferCount - bytesUsed];
-                Array.Copy(inBuffer, bytesUsed, _leftOverBytes, 0, _leftOverBytes.Length);
+                Buffer.BlockCopy(inBuffer, bytesUsed, _leftOverBytes, 0, _leftOverBytes.Length);
             }
             else
             {

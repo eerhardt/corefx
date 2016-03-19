@@ -1,5 +1,6 @@
-﻿// Copyright (c) .NET Foundation and contributors. All rights reserved.
-// Licensed under the MIT license. See LICENSE file in the project root for full license information.
+// Licensed to the .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
+// See the LICENSE file in the project root for more information.
 
 using System;
 using System.Reflection;
@@ -10,24 +11,24 @@ namespace System.Linq.Expressions.Tests
     public class PreDecrementAssignTests : IncDecAssignTests
     {
         [Theory]
-        [MemberData("Int16sAndDecrements")]
-        [MemberData("NullableInt16sAndDecrements")]
-        [MemberData("UInt16sAndDecrements")]
-        [MemberData("NullableUInt16sAndDecrements")]
-        [MemberData("Int32sAndDecrements")]
-        [MemberData("NullableInt32sAndDecrements")]
-        [MemberData("UInt32sAndDecrements")]
-        [MemberData("NullableUInt32sAndDecrements")]
-        [MemberData("Int64sAndDecrements")]
-        [MemberData("NullableInt64sAndDecrements")]
-        [MemberData("UInt64sAndDecrements")]
-        [MemberData("NullableUInt64sAndDecrements")]
-        [MemberData("DecimalsAndDecrements")]
-        [MemberData("NullableDecimalsAndDecrements")]
-        [MemberData("SinglesAndDecrements")]
-        [MemberData("NullableSinglesAndDecrements")]
-        [MemberData("DoublesAndDecrements")]
-        [MemberData("NullableDoublesAndDecrements")]
+        [MemberData(nameof(Int16sAndDecrements))]
+        [MemberData(nameof(NullableInt16sAndDecrements))]
+        [MemberData(nameof(UInt16sAndDecrements))]
+        [MemberData(nameof(NullableUInt16sAndDecrements))]
+        [MemberData(nameof(Int32sAndDecrements))]
+        [MemberData(nameof(NullableInt32sAndDecrements))]
+        [MemberData(nameof(UInt32sAndDecrements))]
+        [MemberData(nameof(NullableUInt32sAndDecrements))]
+        [MemberData(nameof(Int64sAndDecrements))]
+        [MemberData(nameof(NullableInt64sAndDecrements))]
+        [MemberData(nameof(UInt64sAndDecrements))]
+        [MemberData(nameof(NullableUInt64sAndDecrements))]
+        [MemberData(nameof(DecimalsAndDecrements))]
+        [MemberData(nameof(NullableDecimalsAndDecrements))]
+        [MemberData(nameof(SinglesAndDecrements))]
+        [MemberData(nameof(NullableSinglesAndDecrements))]
+        [MemberData(nameof(DoublesAndDecrements))]
+        [MemberData(nameof(NullableDoublesAndDecrements))]
         public void ReturnsCorrectValues(Type type, object value, object result)
         {
             ParameterExpression variable = Expression.Variable(type);
@@ -40,24 +41,24 @@ namespace System.Linq.Expressions.Tests
         }
 
         [Theory]
-        [MemberData("Int16sAndDecrements")]
-        [MemberData("NullableInt16sAndDecrements")]
-        [MemberData("UInt16sAndDecrements")]
-        [MemberData("NullableUInt16sAndDecrements")]
-        [MemberData("Int32sAndDecrements")]
-        [MemberData("NullableInt32sAndDecrements")]
-        [MemberData("UInt32sAndDecrements")]
-        [MemberData("NullableUInt32sAndDecrements")]
-        [MemberData("Int64sAndDecrements")]
-        [MemberData("NullableInt64sAndDecrements")]
-        [MemberData("UInt64sAndDecrements")]
-        [MemberData("NullableUInt64sAndDecrements")]
-        [MemberData("DecimalsAndDecrements")]
-        [MemberData("NullableDecimalsAndDecrements")]
-        [MemberData("SinglesAndDecrements")]
-        [MemberData("NullableSinglesAndDecrements")]
-        [MemberData("DoublesAndDecrements")]
-        [MemberData("NullableDoublesAndDecrements")]
+        [MemberData(nameof(Int16sAndDecrements))]
+        [MemberData(nameof(NullableInt16sAndDecrements))]
+        [MemberData(nameof(UInt16sAndDecrements))]
+        [MemberData(nameof(NullableUInt16sAndDecrements))]
+        [MemberData(nameof(Int32sAndDecrements))]
+        [MemberData(nameof(NullableInt32sAndDecrements))]
+        [MemberData(nameof(UInt32sAndDecrements))]
+        [MemberData(nameof(NullableUInt32sAndDecrements))]
+        [MemberData(nameof(Int64sAndDecrements))]
+        [MemberData(nameof(NullableInt64sAndDecrements))]
+        [MemberData(nameof(UInt64sAndDecrements))]
+        [MemberData(nameof(NullableUInt64sAndDecrements))]
+        [MemberData(nameof(DecimalsAndDecrements))]
+        [MemberData(nameof(NullableDecimalsAndDecrements))]
+        [MemberData(nameof(SinglesAndDecrements))]
+        [MemberData(nameof(NullableSinglesAndDecrements))]
+        [MemberData(nameof(DoublesAndDecrements))]
+        [MemberData(nameof(NullableDoublesAndDecrements))]
         public void AssignsCorrectValues(Type type, object value, object result)
         {
             ParameterExpression variable = Expression.Variable(type);
@@ -111,7 +112,7 @@ namespace System.Linq.Expressions.Tests
         }
 
         [Theory]
-        [MemberData("DecrementOverflowingValues")]
+        [MemberData(nameof(DecrementOverflowingValues))]
         public void OverflowingValuesThrow(object value)
         {
             ParameterExpression variable = Expression.Variable(value.GetType());
@@ -127,7 +128,7 @@ namespace System.Linq.Expressions.Tests
         }
 
         [Theory]
-        [MemberData("UnincrementableAndUndecrementableTypes")]
+        [MemberData(nameof(UnincrementableAndUndecrementableTypes))]
         public void InvalidOperandType(Type type)
         {
             ParameterExpression variable = Expression.Variable(type);

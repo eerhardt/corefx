@@ -1,5 +1,6 @@
-// Copyright (c) Microsoft. All rights reserved.
-// Licensed under the MIT license. See LICENSE file in the project root for full license information.
+// Licensed to the .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
+// See the LICENSE file in the project root for more information.
 
 using System;
 using System.Collections.Generic;
@@ -479,7 +480,7 @@ namespace System.Linq.Expressions
         {
             // COMPAT: This method is marked as non-public to avoid a gap between a 0-ary and 2-ary overload (see remark for the unary case below).
 
-            RequiresCanRead(expression, "expression");
+            RequiresCanRead(expression, nameof(expression));
 
             var method = GetInvokeMethod(expression);
 
@@ -515,7 +516,7 @@ namespace System.Linq.Expressions
         {
             // COMPAT: This method is marked as non-public to ensure compile-time compatibility for Expression.Invoke(e, null).
 
-            RequiresCanRead(expression, "expression");
+            RequiresCanRead(expression, nameof(expression));
 
             var method = GetInvokeMethod(expression);
 
@@ -555,7 +556,7 @@ namespace System.Linq.Expressions
         internal static InvocationExpression Invoke(Expression expression, Expression arg0, Expression arg1)
         {
             // NB: This method is marked as non-public to avoid public API additions at this point.
-            RequiresCanRead(expression, "expression");
+            RequiresCanRead(expression, nameof(expression));
 
             var method = GetInvokeMethod(expression);
 
@@ -600,7 +601,7 @@ namespace System.Linq.Expressions
         {
             // NB: This method is marked as non-public to avoid public API additions at this point.
 
-            RequiresCanRead(expression, "expression");
+            RequiresCanRead(expression, nameof(expression));
 
             var method = GetInvokeMethod(expression);
 
@@ -649,7 +650,7 @@ namespace System.Linq.Expressions
         {
             // NB: This method is marked as non-public to avoid public API additions at this point.
 
-            RequiresCanRead(expression, "expression");
+            RequiresCanRead(expression, nameof(expression));
 
             var method = GetInvokeMethod(expression);
 
@@ -702,7 +703,7 @@ namespace System.Linq.Expressions
         {
             // NB: This method is marked as non-public to avoid public API additions at this point.
 
-            RequiresCanRead(expression, "expression");
+            RequiresCanRead(expression, nameof(expression));
 
             var method = GetInvokeMethod(expression);
 
@@ -770,30 +771,27 @@ namespace System.Linq.Expressions
         ///<paramref name="arguments" /> does not contain the same number of elements as the list of parameters for the delegate represented by <paramref name="expression" />.</exception>
         public static InvocationExpression Invoke(Expression expression, IEnumerable<Expression> arguments)
         {
-            var argumentList = arguments as IReadOnlyList<Expression>;
+            var argumentList = arguments as IReadOnlyList<Expression> ?? arguments.ToReadOnly();
 
-            if (argumentList != null)
+            switch (argumentList.Count)
             {
-                switch (argumentList.Count)
-                {
-                    case 0:
-                        return Invoke(expression);
-                    case 1:
-                        return Invoke(expression, argumentList[0]);
-                    case 2:
-                        return Invoke(expression, argumentList[0], argumentList[1]);
-                    case 3:
-                        return Invoke(expression, argumentList[0], argumentList[1], argumentList[2]);
-                    case 4:
-                        return Invoke(expression, argumentList[0], argumentList[1], argumentList[2], argumentList[3]);
-                    case 5:
-                        return Invoke(expression, argumentList[0], argumentList[1], argumentList[2], argumentList[3], argumentList[4]);
-                }
+                case 0:
+                    return Invoke(expression);
+                case 1:
+                    return Invoke(expression, argumentList[0]);
+                case 2:
+                    return Invoke(expression, argumentList[0], argumentList[1]);
+                case 3:
+                    return Invoke(expression, argumentList[0], argumentList[1], argumentList[2]);
+                case 4:
+                    return Invoke(expression, argumentList[0], argumentList[1], argumentList[2], argumentList[3]);
+                case 5:
+                    return Invoke(expression, argumentList[0], argumentList[1], argumentList[2], argumentList[3], argumentList[4]);
             }
 
-            RequiresCanRead(expression, "expression");
+            RequiresCanRead(expression, nameof(expression));
 
-            var args = arguments.ToReadOnly();
+            var args = argumentList.ToReadOnly(); // Ensure is TrueReadOnlyCollection when count > 5. Returns fast if it already is.
             var mi = GetInvokeMethod(expression);
             ValidateArgumentTypes(mi, ExpressionType.Invoke, ref args);
             return new InvocationExpressionN(expression, args, mi.ReturnType);

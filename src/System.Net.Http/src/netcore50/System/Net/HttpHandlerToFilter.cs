@@ -1,5 +1,6 @@
-// Copyright (c) Microsoft. All rights reserved.
-// Licensed under the MIT license. See LICENSE file in the project root for full license information.
+// Licensed to the .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
+// See the LICENSE file in the project root for more information.
 
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -24,6 +25,8 @@ namespace System.Net.Http
 {
     internal class HttpHandlerToFilter : HttpMessageHandler
     {
+        private readonly static DiagnosticListener s_diagnosticListener = new DiagnosticListener(HttpHandlerLoggingStrings.DiagnosticListenerName);
+
         private readonly RTHttpBaseProtocolFilter _next;
         private int _filterMaxVersionSet;
 
@@ -31,7 +34,7 @@ namespace System.Net.Http
         {
             if (filter == null)
             {
-                throw new ArgumentNullException("filter");
+                throw new ArgumentNullException(nameof(filter));
             }
 
             _next = filter;
@@ -42,9 +45,11 @@ namespace System.Net.Http
         {
             if (request == null)
             {
-                throw new ArgumentNullException("request");
+                throw new ArgumentNullException(nameof(request));
             }
             cancel.ThrowIfCancellationRequested();
+
+            Guid loggingRequestId = s_diagnosticListener.LogHttpRequest(request);
 
             RTHttpRequestMessage rtRequest = await ConvertRequestAsync(request).ConfigureAwait(false);
             RTHttpResponseMessage rtResponse = await _next.SendRequestAsync(rtRequest).AsTask(cancel).ConfigureAwait(false);
@@ -54,6 +59,9 @@ namespace System.Net.Http
 
             HttpResponseMessage response = ConvertResponse(rtResponse);
             response.RequestMessage = request;
+
+            s_diagnosticListener.LogHttpResponse(response, loggingRequestId);
+
             return response;
         }
 
@@ -235,7 +243,7 @@ namespace System.Net.Http
                     // For example if the response contains the following:
                     //     Set-Cookie A=1
                     //     Set-Cookie B=2
-                    // Then we will have a single header KeyValuePair of Key=”Set-Cookie”, Value=”A=1, B=2”. 
+                    // Then we will have a single header KeyValuePair of Key=Set-Cookie, Value=A=1, B=2. 
                     // However clients expect these headers to be separated(i.e. 
                     // httpResponseMessage.Headers.GetValues("Set-Cookie") should return two cookies not one 
                     // concatenated together).

@@ -1,5 +1,6 @@
-// Copyright (c) Microsoft. All rights reserved.
-// Licensed under the MIT license. See LICENSE file in the project root for full license information.
+// Licensed to the .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
+// See the LICENSE file in the project root for more information.
 
 using System;
 using System.Globalization;
@@ -149,56 +150,7 @@ namespace System.Globalization.CalendarsTests
         }
 
         #endregion
-        #region Negative Tests
-        // NegTest1: months is less than -120000
-        [Fact]
-        public void NegTest1()
-        {
-            DateTime time;
-            int months;
-            System.Globalization.Calendar myCalendar;
-            time = DateTime.Now;
-            months = -1 * (c_MAX_MONTHS_NUMBER + 1 + _generator.GetInt32(-55) % (int.MaxValue - c_MAX_MONTHS_NUMBER));
-            myCalendar = new GregorianCalendar(GregorianCalendarTypes.USEnglish);
-            Assert.Throws<ArgumentOutOfRangeException>(() =>
-            {
-                myCalendar.AddMonths(time, months);
-            });
-        }
-
-        // NegTest2: months is greater than 120000
-        [Fact]
-        public void NegTest2()
-        {
-            DateTime time;
-            int months;
-            System.Globalization.Calendar myCalendar;
-            time = DateTime.Now;
-            months = c_MAX_MONTHS_NUMBER + 1 + _generator.GetInt32(-55) % (int.MaxValue - c_MAX_MONTHS_NUMBER);
-            myCalendar = new GregorianCalendar(GregorianCalendarTypes.USEnglish);
-            Assert.Throws<ArgumentOutOfRangeException>(() =>
-           {
-               myCalendar.AddMonths(time, months);
-           });
-        }
-
-        // NegTest3: The resulting DateTime is outside the supported range
-        [Fact]
-        public void NegTest3()
-        {
-            DateTime time;
-            int months;
-            System.Globalization.Calendar myCalendar;
-            myCalendar = new GregorianCalendar(GregorianCalendarTypes.USEnglish);
-            time = myCalendar.MaxSupportedDateTime;
-            months = 1;
-            Assert.Throws<ArgumentOutOfRangeException>(() =>
-           {
-               myCalendar.AddMonths(time, months);
-           });
-        }
-
-        #endregion
+        
         #region Helper method for all the tests
         private string GetParamesInfo(DateTime time, int months)
         {

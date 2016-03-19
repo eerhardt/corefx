@@ -1,5 +1,6 @@
-// Copyright (c) Microsoft. All rights reserved.
-// Licensed under the MIT license. See LICENSE file in the project root for full license information.
+// Licensed to the .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
+// See the LICENSE file in the project root for more information.
 
 using System.Collections.Generic;
 using System.Globalization;
@@ -510,7 +511,7 @@ namespace System.Text.Tests
         }
 
         [Theory]
-        [MemberData("SpecificCodepageEncodings")]
+        [MemberData(nameof(SpecificCodepageEncodings))]
         public static void TestRoundtrippingSpecificCodepageEncoding(string encodingName, byte[] bytes, string expected)
         {
             Encoding encoding = CodePagesEncodingProvider.Instance.GetEncoding(encodingName);
@@ -521,7 +522,7 @@ namespace System.Text.Tests
         }
 
         [Theory]
-        [MemberData("CodePageInfo")]
+        [MemberData(nameof(CodePageInfo))]
         public static void TestCodepageEncoding(int codePage, string webName, string queryString)
         {
             Encoding encoding = CodePagesEncodingProvider.Instance.GetEncoding(queryString);
@@ -540,7 +541,7 @@ namespace System.Text.Tests
         }
 
         [Theory]
-        [MemberData("MultibyteCharacterEncodings")]
+        [MemberData(nameof(MultibyteCharacterEncodings))]
         public static void TestSpecificMultibyteCharacterEncodings(string codepageName, byte[] bytes, int[] expected)
         {
             Decoder decoder = CodePagesEncodingProvider.Instance.GetEncoding(codepageName).GetDecoder();
@@ -555,7 +556,7 @@ namespace System.Text.Tests
         }
 
         [Theory]
-        [MemberData("CodePageInfo")]
+        [MemberData(nameof(CodePageInfo))]
         public static void TestEncodingDisplayNames(int codePage, string webName, string queryString)
         {
             var encoding = CodePagesEncodingProvider.Instance.GetEncoding(codePage);

@@ -1,5 +1,6 @@
-// Copyright (c) Microsoft. All rights reserved.
-// Licensed under the MIT license. See LICENSE file in the project root for full license information.
+// Licensed to the .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
+// See the LICENSE file in the project root for more information.
 
 using System.Diagnostics;
 using System.Diagnostics.Contracts;
@@ -346,7 +347,7 @@ namespace System
             if (startIndex < 0 || startIndex >= value.Length && startIndex > 0)
                 ThrowStartIndexArgumentOutOfRange();
             if (length < 0)
-                throw new ArgumentOutOfRangeException("length", SR.ArgumentOutOfRange_GenericPositive);
+                throw new ArgumentOutOfRangeException(nameof(length), SR.ArgumentOutOfRange_GenericPositive);
             if (startIndex > value.Length - length)
                 ThrowValueArgumentTooSmall();
             Contract.EndContractBlock();
@@ -359,7 +360,7 @@ namespace System
             if (length > (int.MaxValue / 3))
             {
                 // (Int32.MaxValue / 3) == 715,827,882 Bytes == 699 MB
-                throw new ArgumentOutOfRangeException("length", SR.Format(SR.ArgumentOutOfRange_LengthTooLarge, (int.MaxValue / 3)));
+                throw new ArgumentOutOfRangeException(nameof(length), SR.Format(SR.ArgumentOutOfRange_LengthTooLarge, (int.MaxValue / 3)));
             }
 
             int chArrayLength = length * 3;
@@ -424,24 +425,12 @@ namespace System
         [SecuritySafeCritical]
         public static unsafe long DoubleToInt64Bits(double value)
         {
-            // If we're on a big endian machine, what should this method do?  You could argue for
-            // either big endian or little endian, depending on whether you are writing to a file that
-            // should be used by other programs on that processor, or for compatibility across multiple
-            // formats.  Because this is ambiguous, we're excluding this from the Portable Library & Win8 Profile.
-            // If we ever run on big endian machines, produce two versions where endianness is specified.
-            Debug.Assert(IsLittleEndian, "This method is implemented assuming little endian with an ambiguous spec.");
             return *((long*)&value);
         }
 
         [SecuritySafeCritical]
         public static unsafe double Int64BitsToDouble(long value)
         {
-            // If we're on a big endian machine, what should this method do?  You could argue for
-            // either big endian or little endian, depending on whether you are writing to a file that
-            // should be used by other programs on that processor, or for compatibility across multiple
-            // formats.  Because this is ambiguous, we're excluding this from the Portable Library & Win8 Profile.
-            // If we ever run on big endian machines, produce two versions where endianness is specified.
-            Debug.Assert(IsLittleEndian, "This method is implemented assuming little endian with an ambiguous spec.");
             return *((double*)&value);
         }
 

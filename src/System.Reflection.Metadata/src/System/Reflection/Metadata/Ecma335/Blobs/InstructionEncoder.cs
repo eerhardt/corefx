@@ -1,6 +1,8 @@
-// Copyright (c) Microsoft. All rights reserved.
-// Licensed under the MIT license. See LICENSE file in the project root for full license information.
+// Licensed to the .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
+// See the LICENSE file in the project root for more information.
 
+using System;
 using System.Reflection.Metadata;
 using System.Reflection.Metadata.Ecma335;
 
@@ -20,15 +22,15 @@ namespace Roslyn.Reflection.Metadata.Ecma335.Blobs
     struct InstructionEncoder
     {
         public BlobBuilder Builder { get; }
-        private readonly int _startPosition;
+        private readonly BranchBuilder _branchBuilderOpt;
 
-        public InstructionEncoder(BlobBuilder builder)
+        public InstructionEncoder(BlobBuilder builder, BranchBuilder branchBuilder = null)
         {
             Builder = builder;
-            _startPosition = builder.Count;
+            _branchBuilderOpt = branchBuilder;
         }
 
-        public int Offset => Builder.Count - _startPosition;
+        public int Offset => Builder.Count;
 
         public void OpCode(ILOpCode code)
         {
@@ -66,10 +68,10 @@ namespace Roslyn.Reflection.Metadata.Ecma335.Blobs
             Builder.WriteByte(ilOffset);
         }
 
-        public void LoadString(int token)
+        public void LoadString(UserStringHandle handle)
         {
             OpCode(ILOpCode.Ldstr);
-            Token(token);
+            Token(MetadataTokens.GetToken(handle));
         }
 
         public void Call(EntityHandle methodHandle)
@@ -245,6 +247,41 @@ namespace Roslyn.Reflection.Metadata.Ecma335.Blobs
                 OpCode(ILOpCode.Starg);
                 Builder.WriteInt32(argumentIndex);
             }
+        }
+
+        public LabelHandle DefineLabel()
+        {
+            return GetBranchBuilder().AddLabel();
+        }
+
+        public void Branch(ILOpCode code, LabelHandle label)
+        {
+            // throws if code is not a branch:
+            ILOpCode shortCode = code.GetShortBranch();
+
+            GetBranchBuilder().AddBranch(Offset, label, (byte)shortCode);
+            OpCode(shortCode);
+
+            // -1 points in the middle of the branch instruction and is thus invalid.
+            // We want to produce invalid IL so that if the caller doesn't patch the branches 
+            // the branch instructions will be invalid in an obvious way.
+            Builder.WriteSByte(-1);
+        }
+
+        public void MarkLabel(LabelHandle label)
+        {
+            GetBranchBuilder().MarkLabel(Offset, label);
+        }
+
+        private BranchBuilder GetBranchBuilder()
+        {
+            if (_branchBuilderOpt == null)
+            {
+                // TODO: localize
+                throw new InvalidOperationException(nameof(InstructionEncoder) + " created without a branch builder");
+            }
+
+            return _branchBuilderOpt;
         }
     }
 }

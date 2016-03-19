@@ -1,10 +1,12 @@
-// Copyright (c) Microsoft. All rights reserved.
-// Licensed under the MIT license. See LICENSE file in the project root for full license information.
+// Licensed to the .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
+// See the LICENSE file in the project root for more information.
 
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Globalization;
 using System.IO;
+using System.Runtime.ExceptionServices;
 using System.Security.Authentication;
 using System.Security.Authentication.ExtendedProtection;
 using System.Security.Cryptography.X509Certificates;
@@ -37,7 +39,7 @@ namespace System.Net.Security
         private bool _handshakeCompleted;
         private bool _certValidationFailed;
         private SecurityStatusPal _securityStatus;
-        private Exception _exception;
+        private ExceptionDispatchInfo _exception;
 
         private enum CachedSessionStatus : byte
         {
@@ -99,7 +101,7 @@ namespace System.Net.Security
             //
             if (_exception != null)
             {
-                throw _exception;
+                _exception.Throw();
             }
 
             if (Context != null && Context.IsValidContext)
@@ -114,12 +116,12 @@ namespace System.Net.Security
 
             if (targetHost == null)
             {
-                throw new ArgumentNullException("targetHost");
+                throw new ArgumentNullException(nameof(targetHost));
             }
 
             if (isServer && serverCertificate == null)
             {
-                throw new ArgumentNullException("serverCertificate");
+                throw new ArgumentNullException(nameof(serverCertificate));
             }
 
             if ((int)enabledSslProtocols == 0)
@@ -424,11 +426,13 @@ namespace System.Net.Security
             }
         }
 
-        private Exception SetException(Exception e)
+        private ExceptionDispatchInfo SetException(Exception e)
         {
+            Debug.Assert(e != null, $"Expected non-null Exception to be passed to {nameof(SetException)}");
+
             if (_exception == null)
             {
-                _exception = e;
+                _exception = ExceptionDispatchInfo.Capture(e);
             }
 
             if (_exception != null && Context != null)
@@ -459,7 +463,7 @@ namespace System.Net.Security
         {
             if (_exception != null)
             {
-                throw _exception;
+                _exception.Throw();
             }
 
             if (authSucessCheck && !IsAuthenticated)
@@ -478,7 +482,7 @@ namespace System.Net.Security
         //
         internal void Close()
         {
-            _exception = new ObjectDisposedException("SslStream");
+            _exception = ExceptionDispatchInfo.Capture(new ObjectDisposedException("SslStream"));
             if (Context != null)
             {
                 Context.Close();
@@ -596,9 +600,17 @@ namespace System.Net.Security
                         KeyExchangeStrength);
                 }
             }
+            catch (Exception)
+            {
+                // If an exception emerges synchronously, the asynchronous operation was not
+                // initiated, so no operation is in progress.
+                _nestedAuth = 0;
+                throw;
+            }
             finally
             {
-                if (lazyResult == null || _exception != null)
+                // For synchronous operations, the operation has completed.
+                if (lazyResult == null)
                 {
                     _nestedAuth = 0;
                 }
@@ -670,13 +682,13 @@ namespace System.Net.Security
                 _Framing = Framing.Unknown;
                 _handshakeCompleted = false;
 
-                if (SetException(e) == e)
+                if (SetException(e).SourceException == e)
                 {
                     throw;
                 }
                 else
                 {
-                    throw _exception;
+                    _exception.Throw();
                 }
             }
             finally
@@ -737,7 +749,7 @@ namespace System.Net.Security
                 _Framing = Framing.Unknown;
                 _handshakeCompleted = false;
 
-                throw SetException(e);
+                SetException(e).Throw();
             }
         }
 
@@ -795,14 +807,14 @@ namespace System.Net.Security
         {
             if (message.Failed)
             {
-                StartSendAuthResetSignal(null, asyncRequest, new AuthenticationException(SR.net_auth_SSPI, message.GetException()));
+                StartSendAuthResetSignal(null, asyncRequest, ExceptionDispatchInfo.Capture(new AuthenticationException(SR.net_auth_SSPI, message.GetException())));
                 return;
             }
             else if (message.Done && !_pendingReHandshake)
             {
                 if (!CompleteHandshake())
                 {
-                    StartSendAuthResetSignal(null, asyncRequest, new AuthenticationException(SR.net_ssl_io_cert_validation, null));
+                    StartSendAuthResetSignal(null, asyncRequest, ExceptionDispatchInfo.Capture(new AuthenticationException(SR.net_ssl_io_cert_validation, null)));
                     return;
                 }
 
@@ -923,12 +935,12 @@ namespace System.Net.Security
                 int offset = 0;
                 SecurityStatusPal status = PrivateDecryptData(buffer, ref offset, ref count);
 
-                if (status == SecurityStatusPal.OK)
+                if (status.ErrorCode == SecurityStatusPalErrorCode.OK)
                 {
                     Exception e = EnqueueOldKeyDecryptedData(buffer, offset, count);
                     if (e != null)
                     {
-                        StartSendAuthResetSignal(null, asyncRequest, e);
+                        StartSendAuthResetSignal(null, asyncRequest, ExceptionDispatchInfo.Capture(e));
                         return;
                     }
 
@@ -936,11 +948,11 @@ namespace System.Net.Security
                     StartReceiveBlob(buffer, asyncRequest);
                     return;
                 }
-                else if (status != SecurityStatusPal.Renegotiate)
+                else if (status.ErrorCode != SecurityStatusPalErrorCode.Renegotiate)
                 {
                     // Fail re-handshake.
                     ProtocolToken message = new ProtocolToken(null, status);
-                    StartSendAuthResetSignal(null, asyncRequest, new AuthenticationException(SR.net_auth_SSPI, message.GetException()));
+                    StartSendAuthResetSignal(null, asyncRequest, ExceptionDispatchInfo.Capture(new AuthenticationException(SR.net_auth_SSPI, message.GetException())));
                     return;
                 }
 
@@ -958,14 +970,14 @@ namespace System.Net.Security
         //  This is to reset auth state on remote side.
         //  If this write succeeds we will allow auth retrying.
         //
-        private void StartSendAuthResetSignal(ProtocolToken message, AsyncProtocolRequest asyncRequest, Exception exception)
+        private void StartSendAuthResetSignal(ProtocolToken message, AsyncProtocolRequest asyncRequest, ExceptionDispatchInfo exception)
         {
             if (message == null || message.Size == 0)
             {
                 //
                 // We don't have an alert to send so cannot retry and fail prematurely.
                 //
-                throw exception;
+                exception.Throw();
             }
 
             if (asyncRequest == null)
@@ -983,7 +995,7 @@ namespace System.Net.Security
                 InnerStreamAPM.EndWrite(ar);
             }
 
-            throw exception;
+            exception.Throw();
         }
 
         // - Loads the channel parameters
@@ -1049,6 +1061,7 @@ namespace System.Net.Security
                     {
                         GlobalLog.Assert("SslState::WriteCallback", "Exception while decoding context. type:" + exception.GetType().ToString() + " message:" + exception.Message);
                     }
+
                     Debug.Fail("SslState::WriteCallback", "Exception while decoding context. type:" + exception.GetType().ToString() + " message:" + exception.Message);
                 }
 
@@ -1063,10 +1076,10 @@ namespace System.Net.Security
 
                 // Special case for an error notification.
                 object asyncState = asyncRequest.AsyncState;
-                Exception exception = asyncState as Exception;
+                ExceptionDispatchInfo exception = asyncState as ExceptionDispatchInfo;
                 if (exception != null)
                 {
-                    throw exception;
+                    exception.Throw();
                 }
 
                 sslState.CheckCompletionBeforeNextReceive((ProtocolToken)asyncState, asyncRequest);
@@ -1568,13 +1581,14 @@ namespace System.Net.Security
 
             int version = -1;
 
-            if ((bytes == null || bytes.Length == 0))
+            if ((bytes == null || bytes.Length <= 0))
             {
                 if (GlobalLog.IsEnabled)
                 {
-                    GlobalLog.Assert("SslState::DetectFraming()|Header buffer is not allocated will boom shortly.");
+                    GlobalLog.Assert("SslState::DetectFraming()|Header buffer is not allocated.");
                 }
-                Debug.Fail("SslState::DetectFraming()|Header buffer is not allocated will boom shortly.");
+
+                Debug.Fail("SslState::DetectFraming()|Header buffer is not allocated.");
             }
 
             // If the first byte is SSL3 HandShake, then check if we have a SSLv3 Type3 client hello.
@@ -1799,14 +1813,17 @@ namespace System.Net.Security
                 {
                     GlobalLog.Assert("SslState::RehandshakeCompleteCallback()|result is null!");
                 }
+
                 Debug.Fail("SslState::RehandshakeCompleteCallback()|result is null!");
             }
+
             if (!lazyAsyncResult.InternalPeekCompleted)
             {
                 if (GlobalLog.IsEnabled)
                 {
                     GlobalLog.Assert("SslState::RehandshakeCompleteCallback()|result is not completed!");
                 }
+
                 Debug.Fail("SslState::RehandshakeCompleteCallback()|result is not completed!");
             }
 
