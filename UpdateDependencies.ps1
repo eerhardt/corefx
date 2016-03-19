@@ -51,7 +51,7 @@ function CreatePullRequest
 
     $CreatePRHeaders = @{'Accept'='application/vnd.github.v3+json'; 'Authorization'="token $env:GITHUB_PASSWORD"}
 
-    Invoke-WebRequest https://api.github.com/eerhardt/corefx/pulls -Method Post -Body $CreatePRBody -Headers $CreatePRHeaders
+    Invoke-WebRequest https://api.github.com/repos/eerhardt/corefx/pulls -Method Post -Body $CreatePRBody -Headers $CreatePRHeaders
 }
 
 UpdateValidDependencyVersionsFile
