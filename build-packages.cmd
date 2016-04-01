@@ -1,14 +1,23 @@
 @if "%_echo%" neq "on" echo off
-setlocal
+setlocal EnableDelayedExpansion
 
 set packagesLog=build-packages.log
+set binclashLoggerDll=%~dp0Tools\net45\Microsoft.DotNet.Build.Tasks.dll
+set binclashlog=%~dp0binclash.log
 echo Running build-packages.cmd %* > %packagesLog%
+
+set options=/nologo /maxcpucount /v:minimal /clp:Summary /nodeReuse:false /flp:v=detailed;Append;LogFile=%packagesLog% /l:BinClashLogger,%binclashLoggerDll%;LogFile=%binclashlog%
+set allargs=%*
 
 if /I [%1] == [/?] goto Usage
 if /I [%1] == [/help] goto Usage
 
-echo msbuild.exe %~dp0src\packages.builds %* /nologo /v:minimal /flp:v=detailed;Append;LogFile=%packagesLog% >> %packagesLog%
-call msbuild.exe %~dp0src\packages.builds %* /nologo /v:minimal /flp:v=detailed;Append;LogFile=%packagesLog%
+REM ensure that msbuild is available
+echo Running init-tools.cmd
+call %~dp0init-tools.cmd
+
+echo msbuild.exe %~dp0src\packages.builds !options! !allargs! >> %packagesLog%
+call msbuild.exe %~dp0src\packages.builds !options! !allargs!
 if NOT [%ERRORLEVEL%]==[0] (
   echo ERROR: An error occurred while building packages, see %packagesLog% for more details.
   exit /b
