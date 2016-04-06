@@ -2052,7 +2052,7 @@ namespace System.Linq.Expressions.Tests
                         Enumerable.Empty<ParameterExpression>());
             });
 
-            //Userdefined objects
+            //User-defined objects
             Complex comp = new Complex(10, 20);
             Expression<Func<Complex>> e1 =
                 Expression.Lambda<Func<Complex>>(
@@ -2636,7 +2636,7 @@ namespace System.Linq.Expressions.Tests
 
                 /*
                  * needs more thought about what should happen.. these have undefined runtime behavior.
-                 * results dependon whether values are in registers or locals, debug or retail etc.
+                 * results depend on whether values are in registers or locals, debug or retail etc.
                  * 
                 float fmin = float.MinValue;
                 float fmax = float.MaxValue;
@@ -3225,16 +3225,6 @@ namespace System.Linq.Expressions.Tests
             var d = f.Compile(useInterpreter);
             Assert.Equal("nil", d(null));
             Assert.Equal("Not Nil", d("Not Nil"));
-        }
-
-        [Theory]
-        [ClassData(typeof(CompilationTypes))]
-        public static void Conditional(bool useInterpreter)
-        {
-            Expression<Func<int, int, int>> f = (x, y) => x > 5 ? x : y;
-            var d = f.Compile(useInterpreter);
-            Assert.Equal(7, d(7, 4));
-            Assert.Equal(6, d(3, 6));
         }
 
         [Theory]

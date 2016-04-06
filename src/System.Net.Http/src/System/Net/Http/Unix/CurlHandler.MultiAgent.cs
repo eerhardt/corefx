@@ -11,7 +11,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Win32.SafeHandles;
 
-// TODO: Once we upgrade to C# 6, remove all of these and simply import the Http class.
 using CURLAUTH = Interop.Http.CURLAUTH;
 using CURLcode = Interop.Http.CURLcode;
 using CURLINFO = Interop.Http.CURLINFO;
@@ -28,11 +27,22 @@ namespace System.Net.Http
         /// <summary>Provides a multi handle and the associated processing for all requests on the handle.</summary>
         private sealed class MultiAgent
         {
+            /// <summary>
+            /// Amount of time in milliseconds to keep a multiagent worker alive when there's no work to be done.
+            /// Increasing this value makes it more likely that a worker will end up getting reused for subsequent
+            /// requests, saving on the costs associated with spinning up a new worker, but at the same time it
+            /// burns a thread for that period of time.
+            /// </summary>
+            private const int KeepAliveMilliseconds = 50;
+
             private static readonly Interop.Http.ReadWriteCallback s_receiveHeadersCallback = CurlReceiveHeadersCallback;
             private static readonly Interop.Http.ReadWriteCallback s_sendCallback = CurlSendCallback;
             private static readonly Interop.Http.SeekCallback s_seekCallback = CurlSeekCallback;
             private static readonly Interop.Http.ReadWriteCallback s_receiveBodyCallback = CurlReceiveBodyCallback;
             private static readonly Interop.Http.DebugCallback s_debugCallback = CurlDebugFunction;
+
+            /// <summary>CurlHandler that owns this MultiAgent.</summary>
+            private readonly CurlHandler _associatedHandler;
 
             /// <summary>
             /// A collection of not-yet-processed incoming requests for work to be done
@@ -63,6 +73,14 @@ namespace System.Net.Http
             /// Protected by a lock on <see cref="_incomingRequests"/>.
             /// </summary>
             private Task _runningWorker;
+
+            /// <summary>Initializes the MultiAgent.</summary>
+            /// <param name="handler">The handler that owns this agent.</param>
+            public MultiAgent(CurlHandler handler)
+            {
+                Debug.Assert(handler != null, "Expected non-null handler");
+                _associatedHandler = handler;
+            }
 
             /// <summary>Queues a request for the multi handle to process.</summary>
             public void Queue(IncomingRequest request)
@@ -215,6 +233,19 @@ namespace System.Net.Http
                         Interop.Http.CURLMoption.CURLMOPT_PIPELINING,
                         (long)Interop.Http.CurlPipe.CURLPIPE_MULTIPLEX));
                 }
+
+                // Configure max connections per host if it was changed from the default
+                if (_associatedHandler.MaxConnectionsPerServer < int.MaxValue) // int.MaxValue considered infinite, mapping to libcurl default of 0
+                {
+                    CURLMcode code = Interop.Http.MultiSetOptionLong(multiHandle,
+                        Interop.Http.CURLMoption.CURLMOPT_MAX_HOST_CONNECTIONS,
+                        _associatedHandler.MaxConnectionsPerServer);
+
+                    // This should always succeed, as we already verified we can set this option
+                    // with this value.  Treat any failure then as non-fatal in release; worst case
+                    // is we employ more connections than desired.
+                    Debug.Assert(code == CURLMcode.CURLM_OK, $"Expected OK, got {code}");
+                }
                 
                 return multiHandle;
             }
@@ -256,9 +287,25 @@ namespace System.Net.Http
                             HandleIncomingRequest(multiHandle, request);
                         }
 
-                        // If we have no active operations, we're done.
+                        // If we have no active operations, there's no work to do right now.
                         if (_activeOperations.Count == 0)
                         {
+                            // Setting up a mutiagent processing loop involves creating a new MultiAgent, creating a task
+                            // and a thread to process it, creating a new pipe, etc., which has non-trivial cost associated 
+                            // with it.  Thus, to avoid repeatedly spinning up and down these workers, we can keep this worker 
+                            // alive for a little while longer in case another request comes in within some reasonably small 
+                            // amount of time.  This helps with the case where a sequence of requests is made serially rather 
+                            // than in parallel, avoiding the likely case of spinning up a new multiagent for each.
+                            Interop.Sys.PollEvents triggered;
+                            Interop.Error pollRv = Interop.Sys.Poll(_wakeupRequestedPipeFd, Interop.Sys.PollEvents.POLLIN, KeepAliveMilliseconds, out triggered);
+                            if (pollRv == Interop.Error.SUCCESS && (triggered & Interop.Sys.PollEvents.POLLIN) != 0)
+                            {
+                                // Another request came in while we were waiting. Clear the pipe and loop around to continue processing.
+                                ReadFromWakeupPipeWhenKnownToContainData();
+                                continue;
+                            }
+
+                            // We're done.  Exit the multiagent.
                             return;
                         }
 
@@ -594,12 +641,11 @@ namespace System.Net.Http
                 // The callback is invoked once per header; multi-line headers get merged into a single line.
 
                 size *= nitems;
+                Debug.Assert(size <= Interop.Http.CURL_MAX_HTTP_HEADER, $"Expected header size <= {Interop.Http.CURL_MAX_HTTP_HEADER}, got {size}");
                 if (size == 0)
                 {
                     return 0;
                 }
-
-                Debug.Assert(size <= Interop.Http.CURL_MAX_HTTP_HEADER);
 
                 EasyRequest easy;
                 if (TryGetEasyRequestFromContext(context, out easy))
@@ -607,20 +653,31 @@ namespace System.Net.Http
                     CurlHandler.EventSourceTrace("Size: {0}", size, easy: easy);
                     try
                     {
-                        HttpResponseMessage response = easy._responseMessage;
-
+                        CurlResponseMessage response = easy._responseMessage;
                         CurlResponseHeaderReader reader = new CurlResponseHeaderReader(buffer, size);
 
+                        // Validate that we haven't received too much header data.
+                        ulong headerBytesReceived = response._headerBytesReceived + size;
+                        if (headerBytesReceived > (ulong)easy._handler.MaxResponseHeadersLength)
+                        {
+                            throw new HttpRequestException(
+                                SR.Format(SR.net_http_response_headers_exceeded_length, easy._handler.MaxResponseHeadersLength));
+                        }
+                        response._headerBytesReceived = (uint)headerBytesReceived;
+
+                        // Parse the header
                         if (reader.ReadStatusLine(response))
                         {
-                            // Clear the header if status line is received again. This signifies that there are multiple response headers (like in redirection).
+                            // Clear the headers when the status line is received. This may happen multiple times if there are multiple response headers (like in redirection).
                             response.Headers.Clear();
                             response.Content.Headers.Clear();
+                            response._headerBytesReceived = (uint)size;
 
                             easy._isRedirect = easy._handler.AutomaticRedirection &&
-                                         (response.StatusCode == HttpStatusCode.Redirect ||
-                                         response.StatusCode == HttpStatusCode.RedirectKeepVerb ||
-                                         response.StatusCode == HttpStatusCode.RedirectMethod);
+                                (response.StatusCode == HttpStatusCode.Moved ||           // 301
+                                 response.StatusCode == HttpStatusCode.Redirect ||        // 302
+                                 response.StatusCode == HttpStatusCode.RedirectMethod ||  // 303
+                                 response.StatusCode == HttpStatusCode.RedirectKeepVerb); // 307
                         }
                         else
                         {
