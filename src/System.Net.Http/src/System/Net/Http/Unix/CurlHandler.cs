@@ -7,6 +7,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Net.Security;
 using System.Runtime.CompilerServices;
+using System.Security.Authentication;
 using System.Security.Cryptography.X509Certificates;
 using System.Threading;
 using System.Threading.Tasks;
@@ -46,45 +47,54 @@ namespace System.Net.Http
         // when no auth type is specified, e.g. when a NetworkCredential is provided directly
         // to the handler.  As such, we have two different sets of auth types that we use
         // for when the supplied creds are a cache vs not.
-        private readonly static KeyValuePair<string,CURLAUTH>[] s_orderedAuthTypesCredentialCache = new KeyValuePair<string, CURLAUTH>[] {
+        private static readonly KeyValuePair<string,CURLAUTH>[] s_orderedAuthTypesCredentialCache = new KeyValuePair<string, CURLAUTH>[] {
             new KeyValuePair<string,CURLAUTH>("Negotiate", CURLAUTH.Negotiate),
             new KeyValuePair<string,CURLAUTH>("NTLM", CURLAUTH.NTLM), // only available when credentials supplied via a credential cache
             new KeyValuePair<string,CURLAUTH>("Digest", CURLAUTH.Digest),
             new KeyValuePair<string,CURLAUTH>("Basic", CURLAUTH.Basic),
         };
-        private readonly static KeyValuePair<string, CURLAUTH>[] s_orderedAuthTypesICredential = new KeyValuePair<string, CURLAUTH>[] {
+        private static readonly KeyValuePair<string, CURLAUTH>[] s_orderedAuthTypesICredential = new KeyValuePair<string, CURLAUTH>[] {
             new KeyValuePair<string,CURLAUTH>("Negotiate", CURLAUTH.Negotiate),
             new KeyValuePair<string,CURLAUTH>("Digest", CURLAUTH.Digest),
             new KeyValuePair<string,CURLAUTH>("Basic", CURLAUTH.Basic),
         };
 
-        private readonly static char[] s_newLineCharArray = new char[] { HttpRuleParser.CR, HttpRuleParser.LF };
-        private readonly static bool s_supportsAutomaticDecompression;
-        private readonly static bool s_supportsSSL;
-        private readonly static bool s_supportsHttp2Multiplexing;
+        // Max timeout value used by WinHttp handler, so mapping to that here.
+        private static readonly TimeSpan s_maxTimeout = TimeSpan.FromMilliseconds(int.MaxValue);
+
+        private static readonly char[] s_newLineCharArray = new char[] { HttpRuleParser.CR, HttpRuleParser.LF };
+        private static readonly bool s_supportsAutomaticDecompression;
+        private static readonly bool s_supportsSSL;
+        private static readonly bool s_supportsHttp2Multiplexing;
+        private static volatile StrongBox<CURLMcode> s_supportsMaxConnectionsPerServer;
         private static string s_curlVersionDescription;
         private static string s_curlSslVersionDescription;
 
-        private readonly static DiagnosticListener s_diagnosticListener = new DiagnosticListener(HttpHandlerLoggingStrings.DiagnosticListenerName);
+        private static readonly DiagnosticListener s_diagnosticListener = new DiagnosticListener(HttpHandlerLoggingStrings.DiagnosticListenerName);
 
-        private readonly MultiAgent _agent = new MultiAgent();
+        private readonly MultiAgent _agent;
         private volatile bool _anyOperationStarted;
         private volatile bool _disposed;
 
         private IWebProxy _proxy = null;
         private ICredentials _serverCredentials = null;
         private bool _useProxy = HttpHandlerDefaults.DefaultUseProxy;
+        private ICredentials _defaultProxyCredentials = CredentialCache.DefaultCredentials;
         private DecompressionMethods _automaticDecompression = HttpHandlerDefaults.DefaultAutomaticDecompression;
         private bool _preAuthenticate = HttpHandlerDefaults.DefaultPreAuthenticate;
         private CredentialCache _credentialCache = null; // protected by LockObject
         private CookieContainer _cookieContainer = new CookieContainer();
         private bool _useCookie = HttpHandlerDefaults.DefaultUseCookies;
+        private TimeSpan _connectTimeout = Timeout.InfiniteTimeSpan; // TODO: Use the WinHttp default once we determine how to expose this. HttpHandlerDefaults.DefaultConnectTimeout;
         private bool _automaticRedirection = HttpHandlerDefaults.DefaultAutomaticRedirection;
         private int _maxAutomaticRedirections = HttpHandlerDefaults.DefaultMaxAutomaticRedirections;
+        private int _maxConnectionsPerServer = HttpHandlerDefaults.DefaultMaxConnectionsPerServer;
+        private int _maxResponseHeadersLength = HttpHandlerDefaults.DefaultMaxResponseHeaderLength;
         private ClientCertificateOption _clientCertificateOption = HttpHandlerDefaults.DefaultClientCertificateOption;
         private X509Certificate2Collection _clientCertificates;
         private Func<HttpRequestMessage, X509Certificate2, X509Chain, SslPolicyErrors, bool> _serverCertificateValidationCallback;
         private bool _checkCertificateRevocationList;
+        private SslProtocols _sslProtocols = SecurityProtocol.DefaultSecurityProtocols;
 
         private object LockObject { get { return _agent; } }
 
@@ -105,6 +115,11 @@ namespace System.Net.Http
             }
         }
 
+        public CurlHandler()
+        {
+            _agent = new MultiAgent(this);
+        }
+
         #region Properties
 
         private static string CurlVersionDescription => s_curlVersionDescription ?? (s_curlVersionDescription = Interop.Http.GetVersionDescription() ?? string.Empty);
@@ -112,11 +127,7 @@ namespace System.Net.Http
 
         internal bool AutomaticRedirection
         {
-            get
-            {
-                return _automaticRedirection;
-            }
-
+            get { return _automaticRedirection; }
             set
             {
                 CheckDisposedOrStarted();
@@ -124,29 +135,13 @@ namespace System.Net.Http
             }
         }
 
-        internal bool SupportsProxy
-        {
-            get
-            {
-                return true;
-            }
-        }
+        internal bool SupportsProxy => true;
 
-        internal bool SupportsRedirectConfiguration
-        {
-            get
-            {
-                return true;
-            }
-        }
+        internal bool SupportsRedirectConfiguration => true;
 
         internal bool UseProxy
         {
-            get
-            {
-                return _useProxy;
-            }
-
+            get { return _useProxy; }
             set
             {
                 CheckDisposedOrStarted();
@@ -156,38 +151,33 @@ namespace System.Net.Http
 
         internal IWebProxy Proxy
         {
-            get
-            {
-                return _proxy;
-            }
-
+            get { return _proxy; }
             set
             {
                 CheckDisposedOrStarted();
                 _proxy = value;
             }
         }
-        
-        internal ICredentials Credentials
-        {
-            get
-            {
-                return _serverCredentials;
-            }
 
+        internal ICredentials DefaultProxyCredentials
+        {
+            get { return _defaultProxyCredentials; }
             set
             {
-                _serverCredentials = value;
+                CheckDisposedOrStarted();
+                _defaultProxyCredentials = value;
             }
+        }
+
+        internal ICredentials Credentials
+        {
+            get { return _serverCredentials; }
+            set { _serverCredentials = value; }
         }
 
         internal ClientCertificateOption ClientCertificateOptions
         {
-            get
-            {
-                return _clientCertificateOption;
-            }
-
+            get { return _clientCertificateOption; }
             set
             {
                 CheckDisposedOrStarted();
@@ -195,10 +185,7 @@ namespace System.Net.Http
             }
         }
 
-        internal X509Certificate2Collection ClientCertificates
-        {
-            get { return _clientCertificates ?? (_clientCertificates = new X509Certificate2Collection()); }
-        }
+        internal X509Certificate2Collection ClientCertificates => _clientCertificates ?? (_clientCertificates = new X509Certificate2Collection());
 
         internal Func<HttpRequestMessage, X509Certificate2, X509Chain, SslPolicyErrors, bool> ServerCertificateValidationCallback
         {
@@ -210,7 +197,7 @@ namespace System.Net.Http
             }
         }
 
-        public bool CheckCertificateRevocationList
+        internal bool CheckCertificateRevocationList
         {
             get { return _checkCertificateRevocationList; }
             set
@@ -220,21 +207,22 @@ namespace System.Net.Http
             }
         }
 
-        internal bool SupportsAutomaticDecompression
+        internal SslProtocols SslProtocols
         {
-            get
+            get { return _sslProtocols; }
+            set
             {
-                return s_supportsAutomaticDecompression;
+                SecurityProtocol.ThrowOnNotAllowed(value, allowNone: false);
+                CheckDisposedOrStarted();
+                _sslProtocols = value;
             }
         }
 
+        internal bool SupportsAutomaticDecompression => s_supportsAutomaticDecompression;
+
         internal DecompressionMethods AutomaticDecompression
         {
-            get
-            {
-                return _automaticDecompression;
-            }
-
+            get { return _automaticDecompression; }
             set
             {
                 CheckDisposedOrStarted();
@@ -244,10 +232,7 @@ namespace System.Net.Http
 
         internal bool PreAuthenticate
         {
-            get
-            {
-                return _preAuthenticate;
-            }
+            get { return _preAuthenticate; }
             set
             {
                 CheckDisposedOrStarted();
@@ -261,11 +246,7 @@ namespace System.Net.Http
 
         internal bool UseCookie
         {
-            get
-            {
-                return _useCookie;
-            }
-
+            get { return _useCookie; }
             set
             {               
                 CheckDisposedOrStarted();
@@ -275,11 +256,7 @@ namespace System.Net.Http
 
         internal CookieContainer CookieContainer
         {
-            get
-            {
-                return _cookieContainer;
-            }
-
+            get { return _cookieContainer; }
             set
             {
                 CheckDisposedOrStarted();
@@ -287,21 +264,29 @@ namespace System.Net.Http
             }
         }
 
+        public TimeSpan ConnectTimeout
+        {
+            get { return _connectTimeout; }
+            set
+            {
+                if (value != Timeout.InfiniteTimeSpan && (value <= TimeSpan.Zero || value > s_maxTimeout))
+                {
+                    throw new ArgumentOutOfRangeException(nameof(value));
+                }
+
+                CheckDisposedOrStarted();
+                _connectTimeout = value;
+            }
+        }
+
         internal int MaxAutomaticRedirections
         {
-            get
-            {
-                return _maxAutomaticRedirections;
-            }
-
+            get { return _maxAutomaticRedirections; }
             set
             {
                 if (value <= 0)
                 {
-                    throw new ArgumentOutOfRangeException(
-nameof(value),
-                        value,
-                        SR.Format(SR.net_http_value_must_be_greater_than, 0));
+                    throw new ArgumentOutOfRangeException(nameof(value), value, SR.Format(SR.net_http_value_must_be_greater_than, 0));
                 }
 
                 CheckDisposedOrStarted();
@@ -309,18 +294,56 @@ nameof(value),
             }
         }
 
-        /// <summary>
-        ///   <b> UseDefaultCredentials is a no op on Unix </b>
-        /// </summary>
-        internal bool UseDefaultCredentials
+        internal int MaxConnectionsPerServer
         {
-            get
-            {
-                return false;
-            }
+            get { return _maxConnectionsPerServer; }
             set
             {
+                if (value < 1)
+                {
+                    throw new ArgumentOutOfRangeException(nameof(value), value, SR.Format(SR.net_http_value_must_be_greater_than, 0));
+                }
+
+                // Make sure the libcurl version we're using supports the option, by setting the value on a temporary multi handle.
+                // We do this once and cache the result.
+                StrongBox<CURLMcode> supported = s_supportsMaxConnectionsPerServer; // benign race condition to read and set this
+                if (supported == null)
+                {
+                    using (Interop.Http.SafeCurlMultiHandle multiHandle = Interop.Http.MultiCreate())
+                    {
+                        s_supportsMaxConnectionsPerServer = supported = new StrongBox<CURLMcode>(
+                            Interop.Http.MultiSetOptionLong(multiHandle, Interop.Http.CURLMoption.CURLMOPT_MAX_HOST_CONNECTIONS, value));
+                    }
+                }
+                if (supported.Value != CURLMcode.CURLM_OK)
+                {
+                    throw new PlatformNotSupportedException(CurlException.GetCurlErrorString((int)supported.Value, isMulti: true));
+                }
+
+                CheckDisposedOrStarted();
+                _maxConnectionsPerServer = value;
             }
+        }
+
+        internal int MaxResponseHeadersLength
+        {
+            get { return _maxResponseHeadersLength; }
+            set
+            {
+                if (value <= 0)
+                {
+                    throw new ArgumentOutOfRangeException(nameof(value), value, SR.Format(SR.net_http_value_must_be_greater_than, 0));
+                }
+
+                CheckDisposedOrStarted();
+                _maxResponseHeadersLength = value;
+            }
+        }
+
+        internal bool UseDefaultCredentials
+        {
+            get { return false; }
+            set { }
         }
         #endregion
 
@@ -331,8 +354,7 @@ nameof(value),
         }
 
         protected internal override Task<HttpResponseMessage> SendAsync(
-            HttpRequestMessage request,
-            CancellationToken cancellationToken)
+            HttpRequestMessage request, CancellationToken cancellationToken)
         {
             if (request == null)
             {
@@ -382,10 +404,7 @@ nameof(value),
             try
             {
                 easy.InitializeCurl();
-                if (easy._requestContentStream != null)
-                {
-                    easy._requestContentStream.Run();
-                }
+                easy._requestContentStream?.Run();
                 _agent.Queue(new MultiAgent.IncomingRequest { Easy = easy, Type = MultiAgent.IncomingRequestType.New });
             }
             catch (Exception exc)
@@ -561,11 +580,21 @@ nameof(value),
 
         private static void ThrowIfCURLEError(CURLcode error)
         {
-            if (error != CURLcode.CURLE_OK)
+            if (error != CURLcode.CURLE_OK) // success
             {
-                var inner = new CurlException((int)error, isMulti: false);
-                EventSourceTrace(inner.Message);
-                throw inner;
+                string msg = CurlException.GetCurlErrorString((int)error, isMulti: false);
+                EventSourceTrace(msg);
+                switch (error)
+                {
+                    case CURLcode.CURLE_OPERATION_TIMEDOUT:
+                        throw new OperationCanceledException(msg);
+
+                    case CURLcode.CURLE_OUT_OF_MEMORY:
+                        throw new OutOfMemoryException(msg);
+
+                    default:
+                        throw new CurlException((int)error, msg);
+                }
             }
         }
 
@@ -574,7 +603,7 @@ nameof(value),
             if (error != CURLMcode.CURLM_OK && // success
                 error != CURLMcode.CURLM_CALL_MULTI_PERFORM) // success + a hint to try curl_multi_perform again
             {
-                string msg = CurlException.GetCurlErrorString((int)error, true);
+                string msg = CurlException.GetCurlErrorString((int)error, isMulti: true);
                 EventSourceTrace(msg);
                 switch (error)
                 {
@@ -648,7 +677,7 @@ nameof(value),
             }
 
             HttpEventSource.Log.HandlerMessage(
-                agent != null && agent.RunningWorkerId.HasValue ? agent.RunningWorkerId.GetValueOrDefault() : 0,
+                (agent?.RunningWorkerId).GetValueOrDefault(),
                 easy != null ? easy.Task.Id : 0,
                 memberName,
                 message);
@@ -742,4 +771,3 @@ nameof(value),
         #endregion
     }
 }
-
