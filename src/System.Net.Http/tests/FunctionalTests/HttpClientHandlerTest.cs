@@ -789,6 +789,28 @@ namespace System.Net.Http.Functional.Tests
         }
 
         [Theory]
+        [InlineData(false)]
+        [InlineData(true)]
+        public async Task PostAsync_Redirect_ResultingGetFormattedCorrectly(bool secure)
+        {
+            const string ContentString = "This is the content string.";
+            var content = new StringContent(ContentString);
+            Uri redirectUri = HttpTestServers.RedirectUriForDestinationUri(
+                secure, 
+                secure ? HttpTestServers.SecureRemoteEchoServer : HttpTestServers.RemoteEchoServer, 
+                1);
+
+            using (var client = new HttpClient())
+            using (HttpResponseMessage response = await client.PostAsync(redirectUri, content))
+            {
+                Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+                string responseContent = await response.Content.ReadAsStringAsync();
+                Assert.DoesNotContain(ContentString, responseContent);
+                Assert.DoesNotContain("Content-Length", responseContent);
+            }
+        }
+
+        [Theory]
         [InlineData(HttpStatusCode.MethodNotAllowed, "Custom description")]
         [InlineData(HttpStatusCode.MethodNotAllowed, "")]
         public async Task GetAsync_CallMethod_ExpectedStatusLine(HttpStatusCode statusCode, string reasonPhrase)
@@ -1036,30 +1058,6 @@ namespace System.Net.Http.Functional.Tests
             }
         }        
 
-        private sealed class UseSpecifiedUriWebProxy : IWebProxy
-        {
-            private readonly Uri _uri;
-            private readonly bool _bypass;
-
-            public UseSpecifiedUriWebProxy(Uri uri, ICredentials credentials = null, bool bypass = false)
-            {
-                _uri = uri;
-                _bypass = bypass;
-                Credentials = credentials;
-            }
-
-            public ICredentials Credentials { get; set; }
-            public Uri GetProxy(Uri destination) => _uri;
-            public bool IsBypassed(Uri host) => _bypass;
-        }
-
-        private sealed class PlatformNotSupportedWebProxy : IWebProxy
-        {
-            public ICredentials Credentials { get; set; }
-            public Uri GetProxy(Uri destination) { throw new PlatformNotSupportedException(); }
-            public bool IsBypassed(Uri host) { throw new PlatformNotSupportedException(); }
-        }
-
         private static IEnumerable<object[]> BypassedProxies()
         {
             yield return new object[] { null };
@@ -1073,8 +1071,8 @@ namespace System.Net.Http.Functional.Tests
             foreach (bool wrapCredsInCache in new[] { true, false })
             {
                 yield return new object[] { CredentialCache.DefaultCredentials, wrapCredsInCache };
-                yield return new object[] { new NetworkCredential("username", "password"), wrapCredsInCache };
-                yield return new object[] { new NetworkCredential("username", "password", "domain"), wrapCredsInCache };
+                yield return new object[] { new NetworkCredential("user:name", "password"), wrapCredsInCache };
+                yield return new object[] { new NetworkCredential("username", "password", "dom:\\ain"), wrapCredsInCache };
             }
         }
         #endregion
