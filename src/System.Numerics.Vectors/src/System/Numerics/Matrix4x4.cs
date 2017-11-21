@@ -526,23 +526,7 @@ namespace System.Numerics
         {
             Matrix4x4 result;
 
-            result.M11 = 1.0f;
-            result.M12 = 0.0f;
-            result.M13 = 0.0f;
-            result.M14 = 0.0f;
-            result.M21 = 0.0f;
-            result.M22 = 1.0f;
-            result.M23 = 0.0f;
-            result.M24 = 0.0f;
-            result.M31 = 0.0f;
-            result.M32 = 0.0f;
-            result.M33 = 1.0f;
-            result.M34 = 0.0f;
-
-            result.M41 = xPosition;
-            result.M42 = yPosition;
-            result.M43 = zPosition;
-            result.M44 = 1.0f;
+            CreateTranslation(xPosition, yPosition, zPosition, out result);
 
             return result;
         }
@@ -586,22 +570,7 @@ namespace System.Numerics
         {
             Matrix4x4 result;
 
-            result.M11 = xScale;
-            result.M12 = 0.0f;
-            result.M13 = 0.0f;
-            result.M14 = 0.0f;
-            result.M21 = 0.0f;
-            result.M22 = yScale;
-            result.M23 = 0.0f;
-            result.M24 = 0.0f;
-            result.M31 = 0.0f;
-            result.M32 = 0.0f;
-            result.M33 = zScale;
-            result.M34 = 0.0f;
-            result.M41 = 0.0f;
-            result.M42 = 0.0f;
-            result.M43 = 0.0f;
-            result.M44 = 1.0f;
+	    CreateScale(xScale, yScale, zScale, out result);
 
             return result;
         }
@@ -2062,9 +2031,10 @@ namespace System.Numerics
         /// <returns>The rotation matrix.</returns>
         public static Matrix4x4 CreateFromYawPitchRoll(float yaw, float pitch, float roll)
         {
-            Quaternion q = Quaternion.CreateFromYawPitchRoll(yaw, pitch, roll);
+            Matrix4x4 result;
+            CreateFromYawPitchRoll(yaw, pitch, roll, out result);
 
-            return Matrix4x4.CreateFromQuaternion(q);
+            return result;
         }
 
         /// <summary>
@@ -3464,31 +3434,7 @@ namespace System.Numerics
         /// <returns>The result of the multiplication.</returns>
         public static Matrix4x4 Multiply(Matrix4x4 value1, Matrix4x4 value2)
         {
-            Matrix4x4 result;
-
-            // First row
-            result.M11 = value1.M11 * value2.M11 + value1.M12 * value2.M21 + value1.M13 * value2.M31 + value1.M14 * value2.M41;
-            result.M12 = value1.M11 * value2.M12 + value1.M12 * value2.M22 + value1.M13 * value2.M32 + value1.M14 * value2.M42;
-            result.M13 = value1.M11 * value2.M13 + value1.M12 * value2.M23 + value1.M13 * value2.M33 + value1.M14 * value2.M43;
-            result.M14 = value1.M11 * value2.M14 + value1.M12 * value2.M24 + value1.M13 * value2.M34 + value1.M14 * value2.M44;
-
-            // Second row
-            result.M21 = value1.M21 * value2.M11 + value1.M22 * value2.M21 + value1.M23 * value2.M31 + value1.M24 * value2.M41;
-            result.M22 = value1.M21 * value2.M12 + value1.M22 * value2.M22 + value1.M23 * value2.M32 + value1.M24 * value2.M42;
-            result.M23 = value1.M21 * value2.M13 + value1.M22 * value2.M23 + value1.M23 * value2.M33 + value1.M24 * value2.M43;
-            result.M24 = value1.M21 * value2.M14 + value1.M22 * value2.M24 + value1.M23 * value2.M34 + value1.M24 * value2.M44;
-
-            // Third row
-            result.M31 = value1.M31 * value2.M11 + value1.M32 * value2.M21 + value1.M33 * value2.M31 + value1.M34 * value2.M41;
-            result.M32 = value1.M31 * value2.M12 + value1.M32 * value2.M22 + value1.M33 * value2.M32 + value1.M34 * value2.M42;
-            result.M33 = value1.M31 * value2.M13 + value1.M32 * value2.M23 + value1.M33 * value2.M33 + value1.M34 * value2.M43;
-            result.M34 = value1.M31 * value2.M14 + value1.M32 * value2.M24 + value1.M33 * value2.M34 + value1.M34 * value2.M44;
-
-            // Fourth row
-            result.M41 = value1.M41 * value2.M11 + value1.M42 * value2.M21 + value1.M43 * value2.M31 + value1.M44 * value2.M41;
-            result.M42 = value1.M41 * value2.M12 + value1.M42 * value2.M22 + value1.M43 * value2.M32 + value1.M44 * value2.M42;
-            result.M43 = value1.M41 * value2.M13 + value1.M42 * value2.M23 + value1.M43 * value2.M33 + value1.M44 * value2.M43;
-            result.M44 = value1.M41 * value2.M14 + value1.M42 * value2.M24 + value1.M43 * value2.M34 + value1.M44 * value2.M44;
+            Multiply(value1, value2, out Matrix4x4 result);
 
             return result;
         }

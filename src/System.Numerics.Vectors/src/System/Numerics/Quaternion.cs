@@ -214,16 +214,7 @@ namespace System.Numerics
         /// <returns>The created Quaternion.</returns>
         public static Quaternion CreateFromAxisAngle(Vector3 axis, float angle)
         {
-            Quaternion ans;
-
-            float halfAngle = angle * 0.5f;
-            float s = MathF.Sin(halfAngle);
-            float c = MathF.Cos(halfAngle);
-
-            ans.X = axis.X * s;
-            ans.Y = axis.Y * s;
-            ans.Z = axis.Z * s;
-            ans.W = c;
+            CreateFromAxisAngle(axis, angle, out Quaternion ans);
 
             return ans;
         }
@@ -256,29 +247,7 @@ namespace System.Numerics
         /// <returns>The Quaterion representing the specified rotation.</returns>
         public static Quaternion CreateFromYawPitchRoll(float yaw, float pitch, float roll)
         {
-            //  Roll first, about axis the object is facing, then
-            //  pitch upward, then yaw to face into the new heading
-            float sr, cr, sp, cp, sy, cy;
-
-            float halfRoll = roll * 0.5f;
-            sr = MathF.Sin(halfRoll);
-            cr = MathF.Cos(halfRoll);
-
-            float halfPitch = pitch * 0.5f;
-            sp = MathF.Sin(halfPitch);
-            cp = MathF.Cos(halfPitch);
-
-            float halfYaw = yaw * 0.5f;
-            sy = MathF.Sin(halfYaw);
-            cy = MathF.Cos(halfYaw);
-
-            Quaternion result;
-
-            result.X = cy * sp * cr + sy * cp * sr;
-            result.Y = sy * cp * cr - cy * sp * sr;
-            result.Z = cy * cp * sr - sy * sp * cr;
-            result.W = cy * cp * cr + sy * sp * sr;
-
+            CreateFromYawPitchRoll(yaw, pitch, roll, out Quaternion result);
             return result;
         }
 

@@ -297,10 +297,8 @@ namespace System.Numerics
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Vector3 Cross(Vector3 vector1, Vector3 vector2)
         {
-            return new Vector3(
-                vector1.Y * vector2.Z - vector1.Z * vector2.Y,
-                vector1.Z * vector2.X - vector1.X * vector2.Z,
-                vector1.X * vector2.Y - vector1.Y * vector2.X);
+            Cross(vector1, vector2, out Vector3 result);
+            return result;
         }
 
         /// <summary>
@@ -434,19 +432,8 @@ namespace System.Numerics
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Vector3 Lerp(Vector3 value1, Vector3 value2, float amount)
         {
-            if (Vector.IsHardwareAccelerated)
-            {
-                Vector3 firstInfluence = value1 * (1f - amount);
-                Vector3 secondInfluence = value2 * amount;
-                return firstInfluence + secondInfluence;
-            }
-            else
-            {
-                return new Vector3(
-                    value1.X + (value2.X - value1.X) * amount,
-                    value1.Y + (value2.Y - value1.Y) * amount,
-                    value1.Z + (value2.Z - value1.Z) * amount);
-            }
+            Lerp(value1, value2, amount, out Vector3 result);
+            return result;
         }
 
         /// <summary>
