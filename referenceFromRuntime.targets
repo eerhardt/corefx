@@ -10,6 +10,13 @@
     </ItemGroup>
   </Target>
 
+  <PropertyGroup>
+    <PrepareProjectReferencesDependsOn>
+      AddProjectReferencesDynamically;
+      $(PrepareProjectReferencesDependsOn)
+    </PrepareProjectReferencesDependsOn>
+  </PropertyGroup>
+  
   <Target Name="AddRuntimeProjectReference"
           BeforeTargets="AddProjectReferencesDynamically"
           Condition="'$(IsTestProject)'!='true' AND '@(ReferenceFromRuntime)' != ''">

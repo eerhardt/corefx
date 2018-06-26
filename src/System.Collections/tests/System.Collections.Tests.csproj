@@ -1,9 +1,7 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <ProjectGuid>{F5EB9630-AD29-4880-963F-F2D39C684D8A}</ProjectGuid>
-  </PropertyGroup>
-  <PropertyGroup>
-    <Configurations>netfx-Debug;netfx-Release;netstandard-Debug;netstandard-Release;netcoreapp-Debug;netcoreapp-Release</Configurations>  
+    <Configurations>netstandard-Debug;netstandard-Release;netcoreapp-Debug;netcoreapp-Release</Configurations>  
     <Platforms>AnyCPU</Platforms>
   </PropertyGroup>
   <ItemGroup>
